@@ -14,29 +14,25 @@ namespace AbbreviationWordAddin
 {
     public partial class ThisAddIn
     {
-        public bool abbreviationEnabled = false; // Enable abbreviation replacement by default
-        private const int CHUNK_SIZE = 1000; // Process 1000 words at a time
+        public bool abbreviationEnabled = false; 
+        private const int CHUNK_SIZE = 1000; 
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
 
             try
             {
-                // Load abbreviations from cache or Excel
                 AbbreviationManager.LoadAbbreviations();
 
                 var application = Globals.ThisAddIn.Application;
                 AutoCorrect autoCorrect = application.AutoCorrect;
                 
-                // Set initial state based on AutoCorrect settings
                 abbreviationEnabled = autoCorrect.ReplaceText;
 
-                // Initialize AutoCorrect cache
                 AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
 
                 String loadingStatusMessage = "";
 
-                // Add each abbreviation to AutoCorrect if enabled
                 if (!Properties.Settings.Default.IsAutoCorrectLoaded)
                 {
                     if (abbreviationEnabled)
@@ -55,13 +51,9 @@ namespace AbbreviationWordAddin
                             catch (System.Runtime.InteropServices.COMException)
                             {
                                 loadingStatusMessage += ", " + abbreviation;
-                                // Skip if entry already exists
                                 continue;
                             }
                         }
-
-                        //System.Windows.Forms.MessageBox.Show("Added all abbreviations to AutoCorrect", "True");
-
 
                         if (loadingStatusMessage != "")
                         {
@@ -92,7 +84,6 @@ namespace AbbreviationWordAddin
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            // Clear cache on shutdown
             //AbbreviationManager.ClearAutoCorrectCache();
         }
 
@@ -103,13 +94,11 @@ namespace AbbreviationWordAddin
                 abbreviationEnabled = enable;
                 if (abbreviationEnabled)
                 {
-                    // Initialize cache when enabling
                     AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");
                 }
                 else
                 {
-                    // Clear cache when disabling
                     AbbreviationManager.ClearAutoCorrectCache();
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
                 }
@@ -126,7 +115,6 @@ namespace AbbreviationWordAddin
             bool completed = false;
             Exception processError = null;
 
-            // Create a background thread for progress updates
             var progressThread = new System.Threading.Thread(() =>
             {
                 try
@@ -134,14 +122,12 @@ namespace AbbreviationWordAddin
                     Word.Document doc = null;
                     syncContext.Send(_ =>
                     {
-                        // Get document reference on UI thread
                         doc = this.Application.ActiveDocument;
-                        this.Application.ScreenUpdating = false; // Disable screen updating to prevent flickering
-                        this.Application.DisplayStatusBar = false; // Disable status bar updates
-                        this.Application.Options.ReplaceSelection = false; // Disable selection replacement
+                        this.Application.ScreenUpdating = false; 
+                        this.Application.DisplayStatusBar = false; 
+                        this.Application.Options.ReplaceSelection = false; 
                     }, null);
 
-                    // Initialize AutoCorrect cache if needed
                     if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
                     {
                         syncContext.Send(_ =>
@@ -160,17 +146,14 @@ namespace AbbreviationWordAddin
                     int currentChunk = 0;
 
 
-                    // Process document in chunks
                     for (int startIndex = 1; startIndex <= totalWords && !completed; startIndex += CHUNK_SIZE)
                     {
                         currentChunk++;
                         int endIndex = Math.Min(startIndex + CHUNK_SIZE - 1, totalWords);
 
-                        // Update progress
                         int percentage = (currentChunk * 100) / totalChunks;
                         progressForm.UpdateProgress(percentage, $"Processing chunk {currentChunk} of {totalChunks}...");
 
-                        // Process chunk on UI thread
                         syncContext.Send(_ =>
                         {
                             try
@@ -179,7 +162,6 @@ namespace AbbreviationWordAddin
                                 string chunkText = chunkRange.Text;
                                 bool hasMatches = false;
 
-                                // Quick check if chunk contains any potential matches
                                 foreach (var phrase in AbbreviationManager.GetAllPhrases())
                                 {
                                     if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
@@ -213,7 +195,6 @@ namespace AbbreviationWordAddin
                                             find.Replacement.ClearFormatting();
                                             find.Replacement.Text = replacement;
 
-                                            // Execute replacement
                                             find.Execute(
                                                 FindText: phrase,
                                                 MatchCase: false,
@@ -231,14 +212,13 @@ namespace AbbreviationWordAddin
                                     }
                                 }
 
-                                // Release COM objects
                                 if (chunkRange != null)
                                     System.Runtime.InteropServices.Marshal.ReleaseComObject(chunkRange);
                             }
                             catch (Exception ex)
                             {
                                 processError = ex;
-                                completed = true; // Stop processing on error
+                                completed = true; 
                             }
                         }, null);
                     }
@@ -251,9 +231,9 @@ namespace AbbreviationWordAddin
                 {
                     syncContext.Send(_ =>
                     {
-                        this.Application.ScreenUpdating = true; // Re-enable screen updating
-                        this.Application.DisplayStatusBar = true; // Re-enable status bar updates
-                        this.Application.Options.ReplaceSelection = true; // Re-enable selection replacement
+                        this.Application.ScreenUpdating = true; 
+                        this.Application.DisplayStatusBar = true; 
+                        this.Application.Options.ReplaceSelection = true; 
                     }, null);
 
                     completed = true;
@@ -266,9 +246,7 @@ namespace AbbreviationWordAddin
 
         }
 
-        /// <summary>
-        /// Highlight all abbreviations in the document using optimized chunk processing.
-        /// </summary>
+
         public void HighlightAllAbbreviations()
         {
             var progressForm = new ProgressForm();
@@ -276,7 +254,6 @@ namespace AbbreviationWordAddin
             bool completed = false;
             Exception processError = null;
 
-            // Create a background thread for progress updates
             var progressThread = new System.Threading.Thread(() =>
             {
                 try
@@ -284,15 +261,12 @@ namespace AbbreviationWordAddin
                     Word.Document doc = null;
                     syncContext.Send(_ =>
                     {
-                        // Get document reference on UI thread
                         doc = this.Application.ActiveDocument;
                         this.Application.ScreenUpdating = false; // Disable screen updating to prevent flickering
                         this.Application.DisplayStatusBar = false; // Disable status bar updates
                         this.Application.Options.ReplaceSelection = false; // Disable selection replacement
-                        //this.Application.Visible = false; // Hide the application window
                     }, null);
 
-                    // Initialize AutoCorrect cache if needed
                     if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
                     {
                         syncContext.Send(_ =>
