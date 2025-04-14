@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI onLoad="Ribbon_Load" xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+    <ribbon>
+        <tabs>
+            <tab idMso="AppxC">
+                <group id="group1" label="Abbreviation Tools">
+                    <button id="btnEnable" onAction="btnEnable_Click" label="Enable Abbreviation" showImage="false" />
+                    <button id="btnDisable" onAction="btnDisable_Click" label="Disable Abbreviation" showImage="false" />
+                    <button id="btnReplaceAll" onAction="btnReplaceAll_Click" label="Replace All" showImage="false" />
+                    <button id="btnHighlightAll" onAction="btnHighlightAll_Click" label="Highlight All" showImage="false" />
+                </group>
+            </tab>
+        </tabs>
+    </ribbon>
+</customUI>
