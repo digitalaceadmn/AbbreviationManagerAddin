@@ -12,12 +12,16 @@ namespace AbbreviationWordAddin
     {
         private static Dictionary<string, string> abbreviationDict = new Dictionary<string, string>();
         private static Dictionary<string, string> autoCorrectCache = new Dictionary<string, string>();
+
         private static bool isAutoCorrectCacheInitialized = false;
         private static string cacheFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "AbbreviationWordAddin",
             "abbreviations.json"
         );
+
+        
+
 
         // Initialize AutoCorrect cache
         public static void InitializeAutoCorrectCache(Microsoft.Office.Interop.Word.AutoCorrect autoCorrect)
@@ -62,6 +66,7 @@ namespace AbbreviationWordAddin
         // Load abbreviations - first tries from cache, then from Excel if needed
         public static void LoadAbbreviations()
         {
+
             if (LoadFromCache())
             {
                 return; // Successfully loaded from cache
@@ -78,19 +83,16 @@ namespace AbbreviationWordAddin
             try
             {
                 if (!File.Exists(cacheFilePath))
-                {
                     return false;
-                }
 
                 string jsonContent = File.ReadAllText(cacheFilePath);
-                var loadedDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
-                
-                if (loadedDict != null && loadedDict.Count > 0)
-                {
-                    abbreviationDict = loadedDict;
-                    return true;
-                }
-                return false;
+                var cache = JsonConvert.DeserializeObject<CacheData>(jsonContent);
+
+                if (cache == null || cache.Version != Properties.Settings.Default.AbbreviationDataVersion || cache.Data == null)
+                    return false;
+
+                abbreviationDict = cache.Data;
+                return true;
             }
             catch (Exception ex)
             {
@@ -113,15 +115,19 @@ namespace AbbreviationWordAddin
         {
             try
             {
-                // Create directory if it doesn't exist
                 string directory = Path.GetDirectoryName(cacheFilePath);
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                // Serialize and save
-                string jsonContent = JsonConvert.SerializeObject(abbreviationDict, Formatting.Indented);
+                var cache = new CacheData
+                {
+                    Version = Properties.Settings.Default.AbbreviationDataVersion,
+                    Data = abbreviationDict
+                };
+
+                string jsonContent = JsonConvert.SerializeObject(cache, Formatting.Indented);
                 File.WriteAllText(cacheFilePath, jsonContent);
             }
             catch (Exception ex)
@@ -135,11 +141,18 @@ namespace AbbreviationWordAddin
             }
         }
 
+        class CacheData
+        {
+            public string Version { get; set; }
+            public Dictionary<string, string> Data { get; set; }
+        }
+
         // Load from embedded Excel file
         private static void LoadFromExcel()
         {
             try
             {
+                ExcelPackage.License.SetNonCommercialPersonal("Abbreviations");
                 var assembly = Assembly.GetExecutingAssembly();
                 var resourceName = "AbbreviationWordAddin.Abbreviations.xlsx"; // Ensure the namespace matches your project
 
