@@ -70,6 +70,8 @@ namespace AbbreviationWordAddin
                 Properties.Settings.Default.IsAutoCorrectLoaded = true;
                 Properties.Settings.Default.Save();
 
+                Globals.ThisAddIn.PromptAndToggleAbbreviationReplacement();
+
             }
             catch (Exception ex)
             {
@@ -85,6 +87,31 @@ namespace AbbreviationWordAddin
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             //AbbreviationManager.ClearAutoCorrectCache();
+        }
+
+        public void PromptAndToggleAbbreviationReplacement()
+        {
+            abbreviationEnabled = false;
+            var result = System.Windows.Forms.MessageBox.Show(
+                abbreviationEnabled
+                    ? "Abbreviation replacement is currently enabled. Do you want to disable it?"
+                    : "Abbreviation replacement is currently disabled. Do you want to enable it?",
+                "Toggle Abbreviation Replacement",
+                System.Windows.Forms.MessageBoxButtons.YesNo,
+                System.Windows.Forms.MessageBoxIcon.Question
+            );
+
+            if (result == System.Windows.Forms.DialogResult.Yes)
+            {
+                bool newState = !abbreviationEnabled;
+                ToggleAbbreviationReplacement(newState);
+            }
+            else
+            {
+                ToggleAbbreviationReplacement(false);
+                System.Windows.Forms.MessageBox.Show("Enable Abbreviations from Appx-C", "Abbreviations are Disabled");
+            }
+            // else: do nothing
         }
 
         public void ToggleAbbreviationReplacement(bool enable)

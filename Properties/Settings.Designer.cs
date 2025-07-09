@@ -37,7 +37,7 @@ namespace AbbreviationWordAddin.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1.0.2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1.0.5")]
         public string AbbreviationDataVersion {
             get {
                 return ((string)(this["AbbreviationDataVersion"]));

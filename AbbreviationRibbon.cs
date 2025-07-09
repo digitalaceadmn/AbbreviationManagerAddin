@@ -12,27 +12,27 @@ namespace AbbreviationWordAddin
         private void AbbreviationRibbon_Load(object sender, RibbonUIEventArgs e)
         {
             // Check if the abbreviation replacement is enabled
-            var application = Globals.ThisAddIn.Application;
-            AutoCorrect autoCorrect = application.AutoCorrect;
-            if (autoCorrect.ReplaceText)
-            {
-                // Initialize cache on load if enabled
-                AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
+            //var application = Globals.ThisAddIn.Application;
+            //AutoCorrect autoCorrect = application.AutoCorrect;
+            //if (autoCorrect.ReplaceText)
+            //{
+            //    // Initialize cache on load if enabled
+            //    AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
                 
-                Globals.ThisAddIn.ToggleAbbreviationReplacement(true);
-                btnEnable.Enabled = false;  // Disable enable button
-                btnDisable.Enabled = true;  // Enable disable button
-                btnEnable.Label = "Enabled"; // Change text to indicate it's enabled
-                btnDisable.Label = "Disable"; // Reset disable button text
-            }
-            else
-            {
-                Globals.ThisAddIn.ToggleAbbreviationReplacement(false);
-                btnEnable.Enabled = true;  // Enable enable button
-                btnDisable.Enabled = false; // Disable disable button
-                btnDisable.Label = "Disabled"; // Change text to indicate it's disabled
-                btnEnable.Label = "Enable"; // Reset enable button text
-            }
+            //    Globals.ThisAddIn.ToggleAbbreviationReplacement(true);
+            //    btnEnable.Enabled = false;  // Disable enable button
+            //    btnDisable.Enabled = true;  // Enable disable button
+            //    btnEnable.Label = "Enabled"; // Change text to indicate it's enabled
+            //    btnDisable.Label = "Disable"; // Reset disable button text
+            //}
+            //else
+            //{
+            //    Globals.ThisAddIn.ToggleAbbreviationReplacement(false);
+            //    btnEnable.Enabled = true;  // Enable enable button
+            //    btnDisable.Enabled = false; // Disable disable button
+            //    btnDisable.Label = "Disabled"; // Change text to indicate it's disabled
+            //    btnEnable.Label = "Enable"; // Reset enable button text
+            //}
         }
 
         private void btnEnable_Click(object sender, RibbonControlEventArgs e)
