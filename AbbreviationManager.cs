@@ -152,6 +152,8 @@ namespace AbbreviationWordAddin
         {
             try
             {
+                AbbreviationManager.ClearAutoCorrectCache();
+
                 ExcelPackage.License.SetNonCommercialPersonal("Abbreviations");
                 var assembly = Assembly.GetExecutingAssembly();
                 var resourceName = "AbbreviationWordAddin.Abbreviations.xlsx"; // Ensure the namespace matches your project
