@@ -103,8 +103,7 @@ namespace AbbreviationWordAddin
 
             if (result == System.Windows.Forms.DialogResult.Yes)
             {
-                bool newState = !abbreviationEnabled;
-                ToggleAbbreviationReplacement(newState);
+                ToggleAbbreviationReplacement(true);
             }
             else
             {
