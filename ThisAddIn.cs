@@ -81,13 +81,6 @@ namespace AbbreviationWordAddin
             }
 
 
-            System.Windows.Forms.MessageBox.Show(
-               reloadAbbrDataFromDict.ToString(),
-               "abbreviationEnabled",
-               System.Windows.Forms.MessageBoxButtons.OK,
-               System.Windows.Forms.MessageBoxIcon.Information
-           );
-
             AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
 
             String loadingStatusMessage = "";
@@ -149,26 +142,10 @@ namespace AbbreviationWordAddin
                             System.Windows.Forms.MessageBoxIcon.Information
                         );
                     }
-                } else
-                {
-                    System.Windows.Forms.MessageBox.Show(
-                               "Not Loading Latest Abbreviation",
-                               "AutoCorrect Entries",
-                               System.Windows.Forms.MessageBoxButtons.OK,
-                               System.Windows.Forms.MessageBoxIcon.Information
-                           );
                 }
-            } else
-            {
-                System.Windows.Forms.MessageBox.Show(
-                               "is AutoCorrect True",
-                               "AutoCorrect Entries",
-                               System.Windows.Forms.MessageBoxButtons.OK,
-                               System.Windows.Forms.MessageBoxIcon.Information
-                           );
-            }
+            } 
 
-                Properties.Settings.Default.IsAutoCorrectLoaded = true;
+            Properties.Settings.Default.IsAutoCorrectLoaded = true;
             Properties.Settings.Default.Save();
         }
 
@@ -218,7 +195,7 @@ namespace AbbreviationWordAddin
                         this.Application.Options.ReplaceSelection = false; 
                     }, null);
 
-                    if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
+                    if (reloadAbbrDataFromDict)
                     {
                         syncContext.Send(_ =>
                         {
