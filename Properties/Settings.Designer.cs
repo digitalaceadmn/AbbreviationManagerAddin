@@ -35,12 +35,27 @@ namespace AbbreviationWordAddin.Properties {
             }
         }
         
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1.0.5")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1.0.12")]
         public string AbbreviationDataVersion {
             get {
                 return ((string)(this["AbbreviationDataVersion"]));
+            }
+            set {
+                this["AbbreviationDataVersion"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1.0.0")]
+        public string LastLoadedAbbreviationVersion {
+            get {
+                return ((string)(this["LastLoadedAbbreviationVersion"]));
+            }
+            set {
+                this["LastLoadedAbbreviationVersion"] = value;
             }
         }
     }

@@ -14,63 +14,44 @@ namespace AbbreviationWordAddin
 {
     public partial class ThisAddIn
     {
-        public bool abbreviationEnabled = false; 
-        private const int CHUNK_SIZE = 1000; 
+        public bool reloadAbbrDataFromDict = false; 
+        private const int CHUNK_SIZE = 1000;
+        string lastLoadedVersion = Properties.Settings.Default.LastLoadedAbbreviationVersion;
+        string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
 
             try
             {
-                AbbreviationManager.LoadAbbreviations();
+               
+                System.Windows.Forms.MessageBox.Show(
+                    "lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
+                    "Abbreviation Loading status",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Information
+                 );
 
-                var application = Globals.ThisAddIn.Application;
-                AutoCorrect autoCorrect = application.AutoCorrect;
-                
-                abbreviationEnabled = autoCorrect.ReplaceText;
-
-                AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
-
-                String loadingStatusMessage = "";
-
-                if (!Properties.Settings.Default.IsAutoCorrectLoaded)
+                if (lastLoadedVersion != currentVersion)
                 {
-                    if (abbreviationEnabled)
-                    {
-                        foreach (var abbreviation in AbbreviationManager.GetAllPhrases())
-                        {
-                            try
-                            {
-                                string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
-                                if (!string.IsNullOrEmpty(fullForm))
-                                {
-                                    autoCorrect.ReplaceText = true;
-                                    autoCorrect.Entries.Add(abbreviation, fullForm);
-                                }
-                            }
-                            catch (System.Runtime.InteropServices.COMException)
-                            {
-                                loadingStatusMessage += ", " + abbreviation;
-                                continue;
-                            }
-                        }
-
-                        if (loadingStatusMessage != "")
-                        {
-                            System.Windows.Forms.MessageBox.Show(
-                                "Abbreviations Loaded. Below phrases were already present in the abbreviation list: " + loadingStatusMessage,
-                                "Abbreviation Loading status",
-                                System.Windows.Forms.MessageBoxButtons.OK,
-                                System.Windows.Forms.MessageBoxIcon.Information
-                            );
-                        }
-                    }
+                    // Version changed → clear file cache
+                    System.Windows.Forms.MessageBox.Show(
+                        "Clear cache because lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
+                        "Abbreviation Loading status",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Information
+                     );
+                    reloadAbbrDataFromDict = true;
+                    AbbreviationManager.ClearCacheFile();
+                    Properties.Settings.Default.IsAutoCorrectLoaded = false;
+                    Properties.Settings.Default.LastLoadedAbbreviationVersion = currentVersion;
+                    Properties.Settings.Default.Save();
+                    Properties.Settings.Default.Reload();
                 }
 
-                Properties.Settings.Default.IsAutoCorrectLoaded = true;
-                Properties.Settings.Default.Save();
+                AbbreviationManager.LoadAbbreviations(); 
 
-                Globals.ThisAddIn.PromptAndToggleAbbreviationReplacement();
+                loadAllAbbreviaitons();
 
             }
             catch (Exception ex)
@@ -84,41 +65,124 @@ namespace AbbreviationWordAddin
             }
         }
 
-        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
+        private void loadAllAbbreviaitons()
         {
-            //AbbreviationManager.ClearAutoCorrectCache();
-        }
+            var application = Globals.ThisAddIn.Application;
+            AutoCorrect autoCorrect = application.AutoCorrect;
 
-        public void PromptAndToggleAbbreviationReplacement()
-        {
-            abbreviationEnabled = false;
-            var result = System.Windows.Forms.MessageBox.Show(
-                abbreviationEnabled
-                    ? "Abbreviation replacement is currently enabled. Do you want to disable it?"
-                    : "Abbreviation replacement is currently disabled. Do you want to enable it?",
-                "Toggle Abbreviation Replacement",
-                System.Windows.Forms.MessageBoxButtons.YesNo,
-                System.Windows.Forms.MessageBoxIcon.Question
-            );
-
-            if (result == System.Windows.Forms.DialogResult.Yes)
+            if (lastLoadedVersion != currentVersion)
             {
-                ToggleAbbreviationReplacement(true);
+                reloadAbbrDataFromDict = true;
+
             }
             else
             {
-                ToggleAbbreviationReplacement(false);
-                System.Windows.Forms.MessageBox.Show("Enable Abbreviations from Appx-C", "Abbreviations are Disabled");
+                reloadAbbrDataFromDict = autoCorrect.ReplaceText;
             }
-            // else: do nothing
+
+
+            System.Windows.Forms.MessageBox.Show(
+               reloadAbbrDataFromDict.ToString(),
+               "abbreviationEnabled",
+               System.Windows.Forms.MessageBoxButtons.OK,
+               System.Windows.Forms.MessageBoxIcon.Information
+           );
+
+            AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
+
+            String loadingStatusMessage = "";
+
+            var entries = autoCorrect.Entries;
+            string entryList = "";
+            foreach (var entry in entries)
+            {
+                var acEntry = entry as Microsoft.Office.Interop.Word.AutoCorrectEntry;
+                if (acEntry != null)
+                {
+                    entryList += $"{acEntry.Name} => {acEntry.Value}\n";
+                }
+            }
+
+            System.Windows.Forms.MessageBox.Show(
+                entryList,
+                "AutoCorrect Entries",
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Information
+            );
+
+
+            if (!Properties.Settings.Default.IsAutoCorrectLoaded)
+            {
+                if (reloadAbbrDataFromDict)
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                               "Loading Latest Abbreviation",
+                               "AutoCorrect Entries",
+                               System.Windows.Forms.MessageBoxButtons.OK,
+                               System.Windows.Forms.MessageBoxIcon.Information
+                           );
+                    foreach (var abbreviation in AbbreviationManager.GetAllPhrases())
+                    {
+                        try
+                        {
+                            
+                            string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
+                            if (!string.IsNullOrEmpty(fullForm))
+                            {
+                                autoCorrect.ReplaceText = true;
+                                autoCorrect.Entries.Add(abbreviation, fullForm);
+                            }
+                        }
+                        catch (System.Runtime.InteropServices.COMException)
+                        {
+                            loadingStatusMessage += ", " + abbreviation;
+                            continue;
+                        }
+                    }
+
+                    if (loadingStatusMessage != "")
+                    {
+                        System.Windows.Forms.MessageBox.Show(
+                            "Abbreviations Loaded. Below phrases were already present in the abbreviation list: " + loadingStatusMessage,
+                            "Abbreviation Loading status",
+                            System.Windows.Forms.MessageBoxButtons.OK,
+                            System.Windows.Forms.MessageBoxIcon.Information
+                        );
+                    }
+                } else
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                               "Not Loading Latest Abbreviation",
+                               "AutoCorrect Entries",
+                               System.Windows.Forms.MessageBoxButtons.OK,
+                               System.Windows.Forms.MessageBoxIcon.Information
+                           );
+                }
+            } else
+            {
+                System.Windows.Forms.MessageBox.Show(
+                               "is AutoCorrect True",
+                               "AutoCorrect Entries",
+                               System.Windows.Forms.MessageBoxButtons.OK,
+                               System.Windows.Forms.MessageBoxIcon.Information
+                           );
+            }
+
+                Properties.Settings.Default.IsAutoCorrectLoaded = true;
+            Properties.Settings.Default.Save();
+        }
+
+        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
+        {
+            //AbbreviationManager.ClearAutoCorrectCache();
         }
 
         public void ToggleAbbreviationReplacement(bool enable)
         {
             if (!Properties.Settings.Default.IsAutoCorrectLoaded)
             {
-                abbreviationEnabled = enable;
-                if (abbreviationEnabled)
+                reloadAbbrDataFromDict = enable;
+                if (reloadAbbrDataFromDict)
                 {
                     AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");

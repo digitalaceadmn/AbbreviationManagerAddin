@@ -77,6 +77,14 @@ namespace AbbreviationWordAddin
             SaveToCache(); // Save to cache for future use
         }
 
+        public static void ClearCacheFile()
+        {
+            if (File.Exists(cacheFilePath))
+            {
+                File.Delete(cacheFilePath);
+            }
+        }
+
         // Load from local cache file
         private static bool LoadFromCache()
         {
@@ -152,6 +160,12 @@ namespace AbbreviationWordAddin
         {
             try
             {
+                System.Windows.Forms.MessageBox.Show(
+                    "Calling Load from Excel",
+                    "Abbreviation Loading status",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Information
+                 );
                 AbbreviationManager.ClearAutoCorrectCache();
 
                 ExcelPackage.License.SetNonCommercialPersonal("Abbreviations");
@@ -185,6 +199,19 @@ namespace AbbreviationWordAddin
                                 abbreviationDict[phrase] = abbreviation;
                             }
                         }
+
+                        string entryList = "";
+                        foreach (var dict in abbreviationDict)
+                        {
+                            entryList += $"{dict.Key} => {dict.Value}\n";
+                        }
+
+                        System.Windows.Forms.MessageBox.Show(
+                            entryList,
+                            "Abbreviation Dictionary Loaded",
+                            System.Windows.Forms.MessageBoxButtons.OK,
+                            System.Windows.Forms.MessageBoxIcon.Information
+                        );
                     }
                 }
             }
