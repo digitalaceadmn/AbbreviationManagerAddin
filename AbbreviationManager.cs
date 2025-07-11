@@ -194,9 +194,13 @@ namespace AbbreviationWordAddin
                             string phrase = worksheet.Cells[row, 1].Text.Trim();
                             string abbreviation = worksheet.Cells[row, 2].Text.Trim();
 
-                            if (!string.IsNullOrEmpty(phrase) && !abbreviationDict.ContainsKey(phrase))
+                            if (!string.IsNullOrEmpty(phrase))
                             {
-                                abbreviationDict[phrase] = abbreviation;
+                                string lowerPhrase = phrase.ToLower(); // ✅ always lowercase!
+                                if (!abbreviationDict.ContainsKey(lowerPhrase))
+                                {
+                                    abbreviationDict[lowerPhrase] = abbreviation;
+                                }
                             }
                         }
 
