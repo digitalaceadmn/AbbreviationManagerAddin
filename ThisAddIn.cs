@@ -470,10 +470,10 @@ namespace AbbreviationWordAddin
                 {
                     syncContext.Send(_ =>
                     {
-                        this.Application.ScreenUpdating = true; // Re-enable screen updating
-                        this.Application.DisplayStatusBar = true; // Re-enable status bar updates
-                        this.Application.Options.ReplaceSelection = true; // Re-enable selection replacement
-                        this.Application.Visible = true; // Show the application window
+                        this.Application.ScreenUpdating = true; 
+                        this.Application.DisplayStatusBar = true; 
+                        this.Application.Options.ReplaceSelection = true; 
+                        this.Application.Visible = true; 
                     }, null);
 
                     completed = true;
@@ -517,7 +517,6 @@ namespace AbbreviationWordAddin
             Word.Selection sel = this.Application.Selection;
             if (sel == null || sel.Range == null) return;
 
-            // Lookup the full form for the abbreviation
             string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
 
             if (string.IsNullOrEmpty(fullForm))
@@ -530,23 +529,19 @@ namespace AbbreviationWordAddin
 
             if (wordRange != null)
             {
-                wordRange.MoveStart(Word.WdUnits.wdWord, -1);
+                int wordCount = abbreviation.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
-                // Replace the word with the full form and a space
+                wordRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+
                 wordRange.Text = fullForm + " ";
 
-                // Optionally move cursor to end
                 sel.SetRange(wordRange.End, wordRange.End);
             }
 
-            // Also add/update the AutoCorrect entry
             try
             {
                 var autoCorrect = this.Application.AutoCorrect;
                 autoCorrect.ReplaceText = true;
-
-                // This will throw if the entry already exists,
-                // so handle it with try/catch or use Exists logic if needed
                 autoCorrect.Entries.Add(abbreviation, fullForm);
             }
             catch (System.Runtime.InteropServices.COMException)
@@ -554,6 +549,7 @@ namespace AbbreviationWordAddin
                 Debug.WriteLine($"AutoCorrect entry for '{abbreviation}' could not be added.");
             }
         }
+
 
 
         /// <summary>
@@ -573,14 +569,28 @@ namespace AbbreviationWordAddin
                     {
                         // Capture last 2 words
                         range.MoveStart(Word.WdUnits.wdWord, -2);
+                        string lastTwoWords = range.Text?.Trim();
 
-                        string phrase = range.Text?.Trim();
+                        range.MoveStart(Word.WdUnits.wdWord, 1);
+                        string lastWord = range.Text?.Trim();
 
-                        if (!string.IsNullOrEmpty(phrase) && phrase != lastWord)
+                        string phraseToUse = null;
+
+                        if (!string.IsNullOrEmpty(lastTwoWords) && AbbreviationManager.GetAbbreviation(lastTwoWords) != null)
                         {
-                            lastWord = phrase;
-                            suggestionPaneControl.SetInputText(phrase);
+                            phraseToUse = lastTwoWords;
                         }
+                        else if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
+                        {
+                            phraseToUse = lastWord;
+                        }
+
+                        if (phraseToUse != null && phraseToUse != this.lastWord)
+                        {
+                            this.lastWord = phraseToUse;
+                            suggestionPaneControl.SetInputText(phraseToUse);
+                        }
+
                     }
                 }
             }

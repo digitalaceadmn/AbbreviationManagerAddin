@@ -316,6 +316,12 @@
     <Compile Include="ThisAddIn.Designer.cs">
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
     </Compile>
+	  <Compile Include="SuggestionPaneControl.cs">
+		  <SubType>UserControl</SubType>
+	  </Compile>
+	  <Compile Include="SuggestionPaneControl.Designer.cs">
+		  <DependentUpon>SuggestionPaneControl.cs</DependentUpon>
+	  </Compile>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
