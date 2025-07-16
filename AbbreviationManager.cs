@@ -241,7 +241,9 @@ namespace AbbreviationWordAddin
         // Get all phrases for replacement
         public static List<string> GetAllPhrases()
         {
-            return new List<string>(abbreviationDict.Keys);
+            return new List<string>(abbreviationDict.Keys)
+                .OrderByDescending(p => p.Length)
+                .ToList();
         }
     }
 }

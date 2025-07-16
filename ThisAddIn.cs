@@ -8,7 +8,9 @@ using Office = Microsoft.Office.Core;
 using Microsoft.Office.Tools.Word;
 using Microsoft.Office.Interop.Word;
 using System.Diagnostics;
-using Action = System.Action; // Explicitly use System.Action to resolve ambiguity
+using Action = System.Action;
+using System.Windows.Forms;
+
 
 namespace AbbreviationWordAddin
 {
@@ -18,6 +20,12 @@ namespace AbbreviationWordAddin
         private const int CHUNK_SIZE = 1000;
         string lastLoadedVersion = Properties.Settings.Default.LastLoadedAbbreviationVersion;
         string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
+        private Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
+        private SuggestionPaneControl suggestionPaneControl;
+
+        private string lastWord = "";
+        private Timer typingTimer;
+
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -31,6 +39,13 @@ namespace AbbreviationWordAddin
                     System.Windows.Forms.MessageBoxButtons.OK,
                     System.Windows.Forms.MessageBoxIcon.Information
                  );
+
+                var autoCorrect = Globals.ThisAddIn.Application.AutoCorrect;
+                for (int i = autoCorrect.Entries.Count; i >= 1; i--)
+                {
+                    autoCorrect.Entries[i].Delete();
+                }
+
 
                 if (lastLoadedVersion != currentVersion)
                 {
@@ -52,6 +67,18 @@ namespace AbbreviationWordAddin
                 AbbreviationManager.LoadAbbreviations(); 
 
                 loadAllAbbreviaitons();
+
+                suggestionPaneControl = new SuggestionPaneControl();
+                suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+                suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
+
+                suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+                suggestionTaskPane.Visible = true;
+
+                typingTimer = new Timer { Interval = 300 };
+                typingTimer.Tick += TypingTimer_Tick;
+                typingTimer.Start();
+
 
             }
             catch (Exception ex)
@@ -96,14 +123,6 @@ namespace AbbreviationWordAddin
                 }
             }
 
-            System.Windows.Forms.MessageBox.Show(
-                entryList,
-                "AutoCorrect Entries",
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Information
-            );
-
-
             if (!Properties.Settings.Default.IsAutoCorrectLoaded)
             {
                 if (reloadAbbrDataFromDict)
@@ -123,7 +142,17 @@ namespace AbbreviationWordAddin
                             if (!string.IsNullOrEmpty(fullForm))
                             {
                                 autoCorrect.ReplaceText = true;
-                                autoCorrect.Entries.Add(abbreviation, fullForm);
+                                //autoCorrect.Entries.Add(abbreviation, fullForm);
+
+                                //var template = application.NormalTemplate;
+
+                                //Word.Document tempDoc = application.Documents.Add(Visible: false);
+                                //Word.Range tempRange = tempDoc.Content;
+                                //tempRange.Text = fullForm;
+
+                                //template.AutoTextEntries.Add(abbreviation, tempRange);
+
+                                //tempDoc.Close(false);
                             }
                         }
                         catch (System.Runtime.InteropServices.COMException)
@@ -152,6 +181,7 @@ namespace AbbreviationWordAddin
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             //AbbreviationManager.ClearAutoCorrectCache();
+
         }
 
         public void ToggleAbbreviationReplacement(bool enable)
@@ -466,6 +496,102 @@ namespace AbbreviationWordAddin
                 );
             }
         }
+
+        /// <summary>
+        /// Event: User typed text in the pane input box.
+        /// </summary>
+        private void SuggestionPaneControl_OnTextChanged(string inputText)
+        {
+            var matches = AbbreviationManager.GetAllPhrases()
+                .Where(p => p.IndexOf(inputText, StringComparison.InvariantCultureIgnoreCase) >= 0)
+                .ToList();
+
+            suggestionPaneControl.ShowSuggestions(matches);
+        }
+
+        /// <summary>
+        /// Event: User accepted a suggestion.
+        /// </summary>
+        private void SuggestionPaneControl_OnSuggestionAccepted(string abbreviation)
+        {
+            Word.Selection sel = this.Application.Selection;
+            if (sel == null || sel.Range == null) return;
+
+            // Lookup the full form for the abbreviation
+            string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
+
+            if (string.IsNullOrEmpty(fullForm))
+            {
+                Debug.WriteLine($"No full form found for abbreviation '{abbreviation}'");
+                return;
+            }
+
+            Word.Range wordRange = sel.Range.Duplicate;
+
+            if (wordRange != null)
+            {
+                wordRange.MoveStart(Word.WdUnits.wdWord, -1);
+
+                // Replace the word with the full form and a space
+                wordRange.Text = fullForm + " ";
+
+                // Optionally move cursor to end
+                sel.SetRange(wordRange.End, wordRange.End);
+            }
+
+            // Also add/update the AutoCorrect entry
+            try
+            {
+                var autoCorrect = this.Application.AutoCorrect;
+                autoCorrect.ReplaceText = true;
+
+                // This will throw if the entry already exists,
+                // so handle it with try/catch or use Exists logic if needed
+                autoCorrect.Entries.Add(abbreviation, fullForm);
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                Debug.WriteLine($"AutoCorrect entry for '{abbreviation}' could not be added.");
+            }
+        }
+
+
+        /// <summary>
+        /// Timer: Checks current word every interval.
+        /// </summary>
+        private void TypingTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                Word.Selection sel = this.Application.Selection;
+
+                if (sel != null && sel.Range != null)
+                {
+                    Word.Range range = sel.Range.Duplicate;
+
+                    if (range != null)
+                    {
+                        // Capture last 2 words
+                        range.MoveStart(Word.WdUnits.wdWord, -2);
+
+                        string phrase = range.Text?.Trim();
+
+                        if (!string.IsNullOrEmpty(phrase) && phrase != lastWord)
+                        {
+                            lastWord = phrase;
+                            suggestionPaneControl.SetInputText(phrase);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error in TypingTimer_Tick: " + ex.Message);
+            }
+        }
+
+
+
 
         #region VSTO generated code
 
