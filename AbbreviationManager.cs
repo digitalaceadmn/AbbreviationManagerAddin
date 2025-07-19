@@ -245,5 +245,10 @@ namespace AbbreviationWordAddin
                 .OrderByDescending(p => p.Length)
                 .ToList();
         }
+
+        public static Dictionary<string, string> GetAllAbbreviations()
+        {
+            return abbreviationDict; 
+        }
     }
 }

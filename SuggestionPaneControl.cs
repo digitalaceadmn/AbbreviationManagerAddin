@@ -6,7 +6,7 @@ namespace AbbreviationWordAddin
     public partial class SuggestionPaneControl : UserControl
     {
         public event Action<string> OnTextChanged;
-        public event Action<string> OnSuggestionAccepted;
+        public event Action<string, string> OnSuggestionAccepted;
 
         public SuggestionPaneControl()
         {
@@ -26,7 +26,10 @@ namespace AbbreviationWordAddin
         {
             if (listBoxSuggestions.SelectedItem != null)
             {
-                OnSuggestionAccepted?.Invoke(listBoxSuggestions.SelectedItem.ToString());
+                OnSuggestionAccepted?.Invoke(
+                    textBoxInput.Text,
+                    listBoxSuggestions.SelectedItem.ToString()
+                );
             }
         }
 

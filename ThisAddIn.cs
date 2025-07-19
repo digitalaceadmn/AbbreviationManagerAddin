@@ -46,6 +46,10 @@ namespace AbbreviationWordAddin
                     autoCorrect.Entries[i].Delete();
                 }
 
+                this.Application.DocumentOpen += Application_DocumentOpen;
+                ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
+                //this.Application.WindowActivate += Application_WindowActivate;
+
 
                 if (lastLoadedVersion != currentVersion)
                 {
@@ -90,6 +94,39 @@ namespace AbbreviationWordAddin
                     System.Windows.Forms.MessageBoxIcon.Warning
                 );
             }
+        }
+
+        private void Application_DocumentOpen(Word.Document Doc)
+        {
+            EnsureTaskPaneVisible();
+        }
+
+        private void Application_NewDocument(Word.Document Doc)
+        {
+            
+            EnsureTaskPaneVisible();
+        }
+
+        //private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
+        //{
+        //    System.Windows.Forms.MessageBox.Show(
+        //                       "Taskpane3",
+        //                       "AutoCorrect Entries",
+        //                       System.Windows.Forms.MessageBoxButtons.OK,
+        //                       System.Windows.Forms.MessageBoxIcon.Information
+        //                   );
+        //    EnsureTaskPaneVisible();
+        //}
+
+        private void EnsureTaskPaneVisible()
+        { 
+           suggestionPaneControl = new SuggestionPaneControl();
+           suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+           suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
+
+           suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+
+           suggestionTaskPane.Visible = true;
         }
 
         private void loadAllAbbreviaitons()
@@ -503,7 +540,10 @@ namespace AbbreviationWordAddin
         private void SuggestionPaneControl_OnTextChanged(string inputText)
         {
             var matches = AbbreviationManager.GetAllPhrases()
-                .Where(p => p.IndexOf(inputText, StringComparison.InvariantCultureIgnoreCase) >= 0)
+                .Where(p =>
+                    p.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase) ||
+                    string.Equals(p, inputText, StringComparison.InvariantCultureIgnoreCase)
+                )
                 .ToList();
 
             suggestionPaneControl.ShowSuggestions(matches);
@@ -512,24 +552,19 @@ namespace AbbreviationWordAddin
         /// <summary>
         /// Event: User accepted a suggestion.
         /// </summary>
-        private void SuggestionPaneControl_OnSuggestionAccepted(string abbreviation)
+        private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string abbreviation)
         {
             Word.Selection sel = this.Application.Selection;
             if (sel == null || sel.Range == null) return;
 
             string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
-
-            if (string.IsNullOrEmpty(fullForm))
-            {
-                Debug.WriteLine($"No full form found for abbreviation '{abbreviation}'");
-                return;
-            }
+            if (string.IsNullOrEmpty(fullForm)) return;
 
             Word.Range wordRange = sel.Range.Duplicate;
 
             if (wordRange != null)
             {
-                int wordCount = abbreviation.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
                 wordRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
 
@@ -548,9 +583,9 @@ namespace AbbreviationWordAddin
             {
                 Debug.WriteLine($"AutoCorrect entry for '{abbreviation}' could not be added.");
             }
+
+            this.Application.ActiveWindow.SetFocus();
         }
-
-
 
         /// <summary>
         /// Timer: Checks current word every interval.
@@ -567,22 +602,36 @@ namespace AbbreviationWordAddin
 
                     if (range != null)
                     {
-                        // Capture last 2 words
-                        range.MoveStart(Word.WdUnits.wdWord, -2);
-                        string lastTwoWords = range.Text?.Trim();
-
-                        range.MoveStart(Word.WdUnits.wdWord, 1);
+                        range.MoveStart(Word.WdUnits.wdWord, -1);
+                        range.MoveEnd(Word.WdUnits.wdWord, 0); 
                         string lastWord = range.Text?.Trim();
 
                         string phraseToUse = null;
 
-                        if (!string.IsNullOrEmpty(lastTwoWords) && AbbreviationManager.GetAbbreviation(lastTwoWords) != null)
-                        {
-                            phraseToUse = lastTwoWords;
-                        }
-                        else if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
+                        if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
                         {
                             phraseToUse = lastWord;
+                        }
+
+                        if (phraseToUse == null)
+                        {
+                            Word.Range twoWordRange = sel.Range.Duplicate;
+                            twoWordRange.MoveStart(Word.WdUnits.wdWord, -2);
+                            twoWordRange.MoveEnd(Word.WdUnits.wdWord, 0);
+                            string lastTwoWords = twoWordRange.Text?.Trim();
+
+                            if (!string.IsNullOrEmpty(lastTwoWords) && AbbreviationManager.GetAbbreviation(lastTwoWords) != null)
+                            {
+                                phraseToUse = lastTwoWords;
+                            }
+                            else if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
+                            {
+                                phraseToUse = lastWord;
+                            }
+                            else if (!string.IsNullOrEmpty(lastWord))
+                            {
+                                phraseToUse = lastWord; 
+                            }
                         }
 
                         if (phraseToUse != null && phraseToUse != this.lastWord)
@@ -590,7 +639,6 @@ namespace AbbreviationWordAddin
                             this.lastWord = phraseToUse;
                             suggestionPaneControl.SetInputText(phraseToUse);
                         }
-
                     }
                 }
             }
@@ -599,6 +647,7 @@ namespace AbbreviationWordAddin
                 Debug.WriteLine("Error in TypingTimer_Tick: " + ex.Message);
             }
         }
+
 
 
 
