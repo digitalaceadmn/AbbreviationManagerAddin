@@ -46,5 +46,10 @@ namespace AbbreviationWordAddin
         {
             textBoxInput.Text = text;
         }
+
+        private void listBoxSuggestions_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

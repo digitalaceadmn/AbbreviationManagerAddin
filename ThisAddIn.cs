@@ -10,6 +10,7 @@ using Microsoft.Office.Interop.Word;
 using System.Diagnostics;
 using Action = System.Action;
 using System.Windows.Forms;
+using Microsoft.Office.Tools;
 
 
 namespace AbbreviationWordAddin
@@ -22,6 +23,7 @@ namespace AbbreviationWordAddin
         string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
         private Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
         private SuggestionPaneControl suggestionPaneControl;
+        private int maxPhraseLength = 12;
 
         private string lastWord = "";
         private Timer typingTimer;
@@ -119,14 +121,24 @@ namespace AbbreviationWordAddin
         //}
 
         private void EnsureTaskPaneVisible()
-        { 
-           suggestionPaneControl = new SuggestionPaneControl();
-           suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
-           suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
+        {
+            // Check if the pane already exists for this document
+            foreach (CustomTaskPane pane in this.CustomTaskPanes)
+            {
+                if (pane.Control is SuggestionPaneControl && pane.Title == "Abbreviation Suggestions")
+                {
+                    pane.Visible = true;
+                    return; // Already exists, just show it
+                }
+            }
 
-           suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+            // If not found, create a new one
+            suggestionPaneControl = new SuggestionPaneControl();
+            suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+            suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
 
-           suggestionTaskPane.Visible = true;
+            suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+            suggestionTaskPane.Visible = true;
         }
 
         private void loadAllAbbreviaitons()
@@ -562,26 +574,25 @@ namespace AbbreviationWordAddin
 
             Word.Range wordRange = sel.Range.Duplicate;
 
-            if (wordRange != null)
-            {
-                int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+            int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+            wordRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+            wordRange.Text = fullForm + " ";
 
-                wordRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
-
-                wordRange.Text = fullForm + " ";
-
-                sel.SetRange(wordRange.End, wordRange.End);
-            }
+            sel.SetRange(wordRange.End, wordRange.End);
 
             try
             {
                 var autoCorrect = this.Application.AutoCorrect;
                 autoCorrect.ReplaceText = true;
-                autoCorrect.Entries.Add(abbreviation, fullForm);
+
+                if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == abbreviation))
+                {
+                    autoCorrect.Entries.Add(abbreviation, fullForm);
+                }
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                Debug.WriteLine($"AutoCorrect entry for '{abbreviation}' could not be added.");
+                Debug.WriteLine($"Could not add '{abbreviation}' to AutoCorrect.");
             }
 
             this.Application.ActiveWindow.SetFocus();
@@ -590,54 +601,389 @@ namespace AbbreviationWordAddin
         /// <summary>
         /// Timer: Checks current word every interval.
         /// </summary>
+        //private void TypingTimer_Tick(object sender, EventArgs e)
+        //{
+        //    try
+        //    {
+        //        Word.Selection sel = this.Application.Selection;
+
+        //        if (sel?.Range != null)
+        //        {
+        //            string matchedPhrase = null;
+        //            string fullForm = null;
+
+        //            for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
+        //            {
+        //                Word.Range testRange = sel.Range.Duplicate;
+        //                testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+        //                testRange.MoveEnd(Word.WdUnits.wdWord, 0);
+
+        //                string candidate = testRange.Text?.Trim();
+
+        //                if (!string.IsNullOrEmpty(candidate))
+        //                {
+        //                    var matches = AbbreviationManager.GetAllPhrases()
+        //                        .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+        //                        .ToList();
+
+        //                    if (matches.Count > 0)
+        //                    {
+        //                        var exactMatch = matches
+        //                            .FirstOrDefault(p => p.Equals(candidate, StringComparison.InvariantCultureIgnoreCase));
+
+        //                        if (!string.IsNullOrEmpty(exactMatch))
+        //                        {
+        //                            // Are there longer possible matches?
+        //                            bool hasLongerMatch = matches.Any(p =>
+        //                            {
+        //                                var words = p.Split(' ');
+        //                                var candidateWords = candidate.Split(' ');
+        //                                return words.Length > candidateWords.Length;
+        //                            });
+
+        //                            if (hasLongerMatch)
+        //                            {
+        //                                string nextWord = GetNextWord(sel);
+
+        //                                bool nextWordMatchesLonger = matches.Any(p =>
+        //                                {
+        //                                    var words = p.Split(' ');
+        //                                    var candidateWords = candidate.Split(' ');
+
+        //                                    if (words.Length > candidateWords.Length)
+        //                                    {
+        //                                        string expectedNextWord = words[candidateWords.Length];
+        //                                        return expectedNextWord.StartsWith(nextWord, StringComparison.InvariantCultureIgnoreCase);
+        //                                    }
+        //                                    return false;
+        //                                });
+
+        //                                if (!string.IsNullOrWhiteSpace(nextWord))
+        //                                {
+        //                                    if (!nextWordMatchesLonger)
+        //                                    {
+        //                                        ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                        return;
+        //                                    }
+        //                                    else
+        //                                    {
+        //                                        this.lastWord = candidate;
+        //                                        suggestionPaneControl.SetInputText(candidate);
+        //                                        suggestionPaneControl.ShowSuggestions(matches);
+        //                                        return;
+        //                                    }
+        //                                }
+        //                                else
+        //                                {
+        //                                    // Next word not typed yet → just wait
+        //                                    this.lastWord = candidate;
+        //                                    suggestionPaneControl.SetInputText(candidate);
+        //                                    suggestionPaneControl.ShowSuggestions(matches);
+        //                                    return;
+        //                                }
+        //                            }
+        //                            else
+        //                            {
+        //                                // No longer match possible → expand if user typed space or next word that does not extend
+        //                                string nextWord = GetNextWord(sel);
+        //                                if (!string.IsNullOrWhiteSpace(nextWord))
+        //                                {
+        //                                    ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                    return;
+        //                                }
+        //                                else
+        //                                {
+        //                                    if (sel.Range.Start > 0)
+        //                                    {
+        //                                        Word.Range charRange = sel.Range.Duplicate;
+        //                                        charRange.MoveStart(Word.WdUnits.wdCharacter, -1);
+        //                                        string lastChar = charRange.Text;
+
+        //                                        if (lastChar == " ")
+        //                                        {
+        //                                            ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                            return;
+        //                                        }
+        //                                    }
+        //                                }
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            // Not exact yet → keep showing suggestions
+        //                            this.lastWord = candidate;
+        //                            suggestionPaneControl.SetInputText(candidate);
+        //                            suggestionPaneControl.ShowSuggestions(matches);
+        //                            return;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine("Error in TypingTimer_Tick: " + ex.Message);
+        //    }
+        //}
+
+        //private void TypingTimer_Tick(object sender, EventArgs e)
+        //{
+        //    try
+        //    {
+        //        Word.Selection sel = this.Application.Selection;
+
+        //        if (sel?.Range != null)
+        //        {
+        //            string matchedPhrase = null;
+        //            string fullForm = null;
+
+        //            for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
+        //            {
+        //                Word.Range testRange = sel.Range.Duplicate;
+        //                testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+        //                testRange.MoveEnd(Word.WdUnits.wdWord, 0);
+
+        //                string candidate = testRange.Text?.Trim();
+
+        //                if (!string.IsNullOrEmpty(candidate))
+        //                {
+        //                    var matches = AbbreviationManager.GetAllPhrases()
+        //                        .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+        //                        .ToList();
+
+        //                    if (matches.Count > 0)
+        //                    {
+        //                        var exactMatch = matches
+        //                            .FirstOrDefault(p => p.Equals(candidate, StringComparison.InvariantCultureIgnoreCase));
+
+        //                        if (!string.IsNullOrEmpty(exactMatch))
+        //                        {
+        //                            // Check if there is a longer possible match
+        //                            bool hasLongerMatch = matches.Any(p =>
+        //                            {
+        //                                var words = p.Split(' ');
+        //                                var candidateWords = candidate.Split(' ');
+        //                                return words.Length > candidateWords.Length;
+        //                            });
+
+        //                            if (hasLongerMatch)
+        //                            {
+        //                                // Wait for next word
+        //                                string nextWord = GetNextWord(sel);
+        //                                bool nextWordMatchesLonger = matches.Any(p =>
+        //                                {
+        //                                    var words = p.Split(' ');
+        //                                    var candidateWords = candidate.Split(' ');
+
+        //                                    if (words.Length > candidateWords.Length)
+        //                                    {
+        //                                        string expectedNextWord = words[candidateWords.Length];
+        //                                        return expectedNextWord.StartsWith(nextWord, StringComparison.InvariantCultureIgnoreCase);
+        //                                    }
+        //                                    return false;
+        //                                });
+
+        //                                if (!string.IsNullOrWhiteSpace(nextWord) && !nextWordMatchesLonger)
+        //                                {
+        //                                    // Next word does not match → expand shorter match
+        //                                    ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                    return;
+        //                                }
+        //                                else
+        //                                {
+        //                                    // Wait: show suggestions for longer options
+        //                                    this.lastWord = candidate;
+        //                                    suggestionPaneControl.SetInputText(candidate);
+        //                                    suggestionPaneControl.ShowSuggestions(matches);
+        //                                    return;
+        //                                }
+        //                            }
+        //                            else
+        //                            {
+        //                                // ✅ FIX: No longer match possible
+        //                                string nextWord = GetNextWord(sel);
+        //                                if (!string.IsNullOrWhiteSpace(nextWord))
+        //                                {
+        //                                    // There is a next word → expand now
+        //                                    ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                    return;
+        //                                }
+        //                                else
+        //                                {
+        //                                    // No next word → expand only if space typed
+        //                                    if (sel.Range.Start > 0)
+        //                                    {
+        //                                        Word.Range charRange = sel.Range.Duplicate;
+        //                                        charRange.MoveStart(Word.WdUnits.wdCharacter, -1);
+        //                                        string lastChar = charRange.Text;
+
+        //                                        if (lastChar == " ")
+        //                                        {
+        //                                            ReplaceWithFullForm(exactMatch, testRange, sel);
+        //                                            return;
+        //                                        }
+        //                                    }
+        //                                }
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            // Not exact yet → keep showing suggestions
+        //                            this.lastWord = candidate;
+        //                            suggestionPaneControl.SetInputText(candidate);
+        //                            suggestionPaneControl.ShowSuggestions(matches);
+        //                            return;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine("Error in TypingTimer_Tick: " + ex.Message);
+        //    }
+        //}
+
         private void TypingTimer_Tick(object sender, EventArgs e)
         {
             try
             {
                 Word.Selection sel = this.Application.Selection;
 
-                if (sel != null && sel.Range != null)
+                if (sel?.Range != null)
                 {
-                    Word.Range range = sel.Range.Duplicate;
-
-                    if (range != null)
+                    for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
                     {
-                        range.MoveStart(Word.WdUnits.wdWord, -1);
-                        range.MoveEnd(Word.WdUnits.wdWord, 0); 
-                        string lastWord = range.Text?.Trim();
+                        Word.Range testRange = sel.Range.Duplicate;
+                        testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+                        testRange.MoveEnd(Word.WdUnits.wdWord, 0);
 
-                        string phraseToUse = null;
+                        string candidate = testRange.Text?.Trim();
 
-                        if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
+                        if (!string.IsNullOrEmpty(candidate))
                         {
-                            phraseToUse = lastWord;
-                        }
+                            var matches = AbbreviationManager.GetAllPhrases()
+                                .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+                                .ToList();
 
-                        if (phraseToUse == null)
-                        {
-                            Word.Range twoWordRange = sel.Range.Duplicate;
-                            twoWordRange.MoveStart(Word.WdUnits.wdWord, -2);
-                            twoWordRange.MoveEnd(Word.WdUnits.wdWord, 0);
-                            string lastTwoWords = twoWordRange.Text?.Trim();
+                            if (matches.Count > 0)
+                            {
+                                var exactMatch = matches
+                                    .FirstOrDefault(p => p.Equals(candidate, StringComparison.InvariantCultureIgnoreCase));
 
-                            if (!string.IsNullOrEmpty(lastTwoWords) && AbbreviationManager.GetAbbreviation(lastTwoWords) != null)
-                            {
-                                phraseToUse = lastTwoWords;
-                            }
-                            else if (!string.IsNullOrEmpty(lastWord) && AbbreviationManager.GetAbbreviation(lastWord) != null)
-                            {
-                                phraseToUse = lastWord;
-                            }
-                            else if (!string.IsNullOrEmpty(lastWord))
-                            {
-                                phraseToUse = lastWord; 
-                            }
-                        }
+                                if (!string.IsNullOrEmpty(exactMatch))
+                                {
+                                    bool hasLongerMatch = matches.Any(p =>
+                                    {
+                                        var words = p.Split(' ');
+                                        var candidateWords = candidate.Split(' ');
+                                        return words.Length > candidateWords.Length;
+                                    });
 
-                        if (phraseToUse != null && phraseToUse != this.lastWord)
-                        {
-                            this.lastWord = phraseToUse;
-                            suggestionPaneControl.SetInputText(phraseToUse);
+                                    if (hasLongerMatch)
+                                    {
+                                        string nextWord = GetNextWord(sel);
+                                        bool nextWordMatchesLonger = matches.Any(p =>
+                                        {
+                                            var words = p.Split(' ');
+                                            var candidateWords = candidate.Split(' ');
+
+                                            if (words.Length > candidateWords.Length)
+                                            {
+                                                string expectedNextWord = words[candidateWords.Length];
+                                                return expectedNextWord.StartsWith(nextWord, StringComparison.InvariantCultureIgnoreCase);
+                                            }
+                                            return false;
+                                        });
+
+                                        if (!string.IsNullOrWhiteSpace(nextWord) && !nextWordMatchesLonger)
+                                        {
+                                            // NEW: Fallback to shorter match if possible
+                                            var shorterExact = matches
+                                                .Where(p => !string.Equals(p, candidate, StringComparison.InvariantCultureIgnoreCase))
+                                                .OrderByDescending(p => p.Split(' ').Length)
+                                                .FirstOrDefault(p => p.Equals(string.Join(" ", p.Split(' ')), StringComparison.InvariantCultureIgnoreCase));
+
+                                            if (string.IsNullOrEmpty(shorterExact))
+                                            {
+                                                shorterExact = matches
+                                                    .OrderByDescending(p => p.Split(' ').Length)
+                                                    .FirstOrDefault(p =>
+                                                    {
+                                                        var candidateWords = candidate.Split(' ');
+                                                        var words = p.Split(' ');
+                                                        if (words.Length < candidateWords.Length)
+                                                        {
+                                                            var candidatePrefix = string.Join(" ", candidateWords.Take(words.Length));
+                                                            return candidatePrefix.Equals(p, StringComparison.InvariantCultureIgnoreCase);
+                                                        }
+                                                        return false;
+                                                    });
+                                            }
+
+                                            if (!string.IsNullOrEmpty(shorterExact))
+                                            {
+                                                var candidateWords = candidate.Split(' ');
+                                                var shorterWords = shorterExact.Split(' ');
+
+                                                int difference = candidateWords.Length - shorterWords.Length;
+
+                                                if (difference > 0)
+                                                {
+                                                    testRange.MoveStart(Word.WdUnits.wdWord, -difference);
+                                                }
+
+                                                ReplaceWithFullForm(shorterExact, testRange, sel);
+                                                return;
+                                            }
+
+                                            ReplaceWithFullForm(exactMatch, testRange, sel);
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            // Wait for longer phrase: show suggestions
+                                            this.lastWord = candidate;
+                                            suggestionPaneControl.SetInputText(candidate);
+                                            suggestionPaneControl.ShowSuggestions(matches);
+                                            return;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        string nextWord = GetNextWord(sel);
+                                        if (!string.IsNullOrWhiteSpace(nextWord))
+                                        {
+                                            ReplaceWithFullForm(exactMatch, testRange, sel);
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            if (sel.Range.Start > 0)
+                                            {
+                                                Word.Range charRange = sel.Range.Duplicate;
+                                                charRange.MoveStart(Word.WdUnits.wdCharacter, -1);
+                                                string lastChar = charRange.Text;
+
+                                                if (lastChar == " ")
+                                                {
+                                                    ReplaceWithFullForm(exactMatch, testRange, sel);
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    this.lastWord = candidate;
+                                    suggestionPaneControl.SetInputText(candidate);
+                                    suggestionPaneControl.ShowSuggestions(matches);
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
@@ -647,6 +993,37 @@ namespace AbbreviationWordAddin
                 Debug.WriteLine("Error in TypingTimer_Tick: " + ex.Message);
             }
         }
+
+
+
+
+        private void ReplaceWithFullForm(string matchedPhrase, Word.Range replaceRange, Word.Selection sel)
+        {
+            string fullForm = AbbreviationManager.GetAbbreviation(matchedPhrase);
+            if (!string.IsNullOrEmpty(fullForm))
+            {
+                replaceRange.Text = fullForm + " ";
+                sel.SetRange(replaceRange.End, replaceRange.End);
+                this.Application.AutoCorrect.Entries.Add(matchedPhrase, fullForm);
+                this.lastWord = matchedPhrase;
+            }
+        }
+
+        private string GetNextWord(Word.Selection sel)
+        {
+            Word.Range testRange = sel.Range.Duplicate;
+            testRange.MoveStart(Word.WdUnits.wdWord, -1);
+            testRange.MoveEnd(Word.WdUnits.wdWord, 1);
+
+            string[] words = testRange.Text.Trim().Split(' ');
+            if (words.Length > 1)
+            {
+                return words.Last();
+            }
+
+            return "";
+        }
+
 
 
 
