@@ -34,7 +34,7 @@
     <PublishUrl>D:\add-in\</PublishUrl>
     <InstallUrl />
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.81</ApplicationVersion>
+    <ApplicationVersion>1.0.0.82</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -313,7 +313,18 @@
     <EmbeddedResource Include="SuggestionPaneControl.resx">
       <DependentUpon>SuggestionPaneControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Templates\GeneralFormat.docx" />
+    <EmbeddedResource Include="Templates\General Format.docx" />
+    <EmbeddedResource Include="Templates\Agenda Pts.docx" />
+    <EmbeddedResource Include="Templates\Appx Format.docx" />
+    <EmbeddedResource Include="Templates\DO Letter.docx" />
+    <EmbeddedResource Include="Templates\E-mail Format.docx" />
+    <EmbeddedResource Include="Templates\MoM.docx" />
+    <EmbeddedResource Include="Templates\Noting Sheet.docx" />
+    <EmbeddedResource Include="Templates\Op Notes.docx" />
+    <EmbeddedResource Include="Templates\Service Paper.docx" />
+    <EmbeddedResource Include="Templates\Signal Form.docx" />
+    <EmbeddedResource Include="Templates\Statement of Case %28DPM%29.docx" />
+    <EmbeddedResource Include="Templates\Statement of Case.docx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
