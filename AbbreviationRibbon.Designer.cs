@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using static AbbreviationWordAddin.AbbreviationRibbon;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace AbbreviationWordAddin
@@ -63,11 +64,17 @@ namespace AbbreviationWordAddin
             this.btnHighlightAll = this.Factory.CreateRibbonButton();
             this.menuTemplates = this.Factory.CreateRibbonMenu();
             this.btnGeneralFormat = this.Factory.CreateRibbonButton();
-            this.btnServiceLetterFormat = this.Factory.CreateRibbonButton();
-            this.btnSalaryCertificateFormat = this.Factory.CreateRibbonButton();
-            this.btnExperienceCertificateFormat = this.Factory.CreateRibbonButton();
-            this.btnOfferLetterFormat = this.Factory.CreateRibbonButton();
-            this.btnAppointmentLetterFormat = this.Factory.CreateRibbonButton();
+            this.btnDoLetter = this.Factory.CreateRibbonButton();
+            this.btnNotingSheet = this.Factory.CreateRibbonButton();
+            this.btnSignalForm = this.Factory.CreateRibbonButton();
+            this.btnStatementOfCase = this.Factory.CreateRibbonButton();
+            this.btnStatementOfCaseDPM = this.Factory.CreateRibbonButton();
+            this.btnAppxFormat = this.Factory.CreateRibbonButton();
+            this.btnServicePaper = this.Factory.CreateRibbonButton();
+            this.btnAgendaPts = this.Factory.CreateRibbonButton();
+            this.btnOpNotes = this.Factory.CreateRibbonButton();
+            this.btnMoM = this.Factory.CreateRibbonButton();
+            this.btnEmailFormat = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.AppxC.SuspendLayout();
             this.group2.SuspendLayout();
@@ -82,7 +89,7 @@ namespace AbbreviationWordAddin
             // AppxC
             // 
             this.AppxC.Groups.Add(this.group2);
-            this.AppxC.Label = "Appx-C";
+            this.AppxC.Label = "JSSD";
             this.AppxC.Name = "AppxC";
             // 
             // group2
@@ -122,11 +129,17 @@ namespace AbbreviationWordAddin
             // menuTemplates
             // 
             this.menuTemplates.Items.Add(this.btnGeneralFormat);
-            this.menuTemplates.Items.Add(this.btnServiceLetterFormat);
-            this.menuTemplates.Items.Add(this.btnSalaryCertificateFormat);
-            this.menuTemplates.Items.Add(this.btnExperienceCertificateFormat);
-            this.menuTemplates.Items.Add(this.btnOfferLetterFormat);
-            this.menuTemplates.Items.Add(this.btnAppointmentLetterFormat);
+            this.menuTemplates.Items.Add(this.btnDoLetter);
+            this.menuTemplates.Items.Add(this.btnNotingSheet);
+            this.menuTemplates.Items.Add(this.btnSignalForm);
+            this.menuTemplates.Items.Add(this.btnStatementOfCase);
+            this.menuTemplates.Items.Add(this.btnStatementOfCaseDPM);
+            this.menuTemplates.Items.Add(this.btnAppxFormat);
+            this.menuTemplates.Items.Add(this.btnServicePaper);
+            this.menuTemplates.Items.Add(this.btnAgendaPts);
+            this.menuTemplates.Items.Add(this.btnOpNotes);
+            this.menuTemplates.Items.Add(this.btnMoM);
+            this.menuTemplates.Items.Add(this.btnEmailFormat);
             this.menuTemplates.Label = "Template";
             this.menuTemplates.Name = "menuTemplates";
             // 
@@ -137,40 +150,71 @@ namespace AbbreviationWordAddin
             this.btnGeneralFormat.ShowImage = true;
             this.btnGeneralFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGeneralFormat_Click);
             // 
-            // btnServiceLetterFormat
-            // 
-            this.btnServiceLetterFormat.Label = "Service Letter Format";
-            this.btnServiceLetterFormat.Name = "btnServiceLetterFormat";
-            this.btnServiceLetterFormat.ShowImage = true;
-            this.btnServiceLetterFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServiceLetterFormat_Click);
-            // 
-            // btnSalaryCertificateFormat
-            // 
-            this.btnSalaryCertificateFormat.Label = "Salary Certificate Format";
-            this.btnSalaryCertificateFormat.Name = "btnSalaryCertificateFormat";
-            this.btnSalaryCertificateFormat.ShowImage = true;
-            this.btnSalaryCertificateFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSalaryCertificateFormat_Click);
-            // 
-            // btnExperienceCertificateFormat
-            // 
-            this.btnExperienceCertificateFormat.Label = "Experience Certificate Format";
-            this.btnExperienceCertificateFormat.Name = "btnExperienceCertificateFormat";
-            this.btnExperienceCertificateFormat.ShowImage = true;
-            this.btnExperienceCertificateFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnExperienceCertificateFormat_Click);
-            // 
-            // btnOfferLetterFormat
-            // 
-            this.btnOfferLetterFormat.Label = "Offer Letter Format";
-            this.btnOfferLetterFormat.Name = "btnOfferLetterFormat";
-            this.btnOfferLetterFormat.ShowImage = true;
-            this.btnOfferLetterFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOfferLetterFormat_Click);
-            // 
-            // btnAppointmentLetterFormat
-            // 
-            this.btnAppointmentLetterFormat.Label = "Appointment Letter Format";
-            this.btnAppointmentLetterFormat.Name = "btnAppointmentLetterFormat";
-            this.btnAppointmentLetterFormat.ShowImage = true;
-            this.btnAppointmentLetterFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppointmentLetterFormat_Click);
+            // DO Letter
+            this.btnDoLetter.Label = "DO Letter";
+            this.btnDoLetter.Name = "btnDoLetter";
+            this.btnDoLetter.ShowImage = true;
+            this.btnDoLetter.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDoLetter_Click);
+
+            // Noting Sheet
+            this.btnNotingSheet.Label = "Noting Sheet";
+            this.btnNotingSheet.Name = "btnNotingSheet";
+            this.btnNotingSheet.ShowImage = true;
+            this.btnNotingSheet.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnNotingSheet_Click);
+
+            // Signal Form
+            this.btnSignalForm.Label = "Signal Form";
+            this.btnSignalForm.Name = "btnSignalForm";
+            this.btnSignalForm.ShowImage = true;
+            this.btnSignalForm.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSignalForm_Click);
+
+            // Statement of Case
+            this.btnStatementOfCase.Label = "Statement of Case";
+            this.btnStatementOfCase.Name = "btnStatementOfCase";
+            this.btnStatementOfCase.ShowImage = true;
+            this.btnStatementOfCase.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCase_Click);
+
+            // Statement of Case (DPM)
+            this.btnStatementOfCaseDPM.Label = "Statement of Case (DPM)";
+            this.btnStatementOfCaseDPM.Name = "btnStatementOfCaseDPM";
+            this.btnStatementOfCaseDPM.ShowImage = true;
+            this.btnStatementOfCaseDPM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCaseDPM_Click);
+
+            // Appx Format
+            this.btnAppxFormat.Label = "Appx Format";
+            this.btnAppxFormat.Name = "btnAppxFormat";
+            this.btnAppxFormat.ShowImage = true;
+            this.btnAppxFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppxFormat_Click);
+
+            // Service Paper
+            this.btnServicePaper.Label = "Service Paper";
+            this.btnServicePaper.Name = "btnServicePaper";
+            this.btnServicePaper.ShowImage = true;
+            this.btnServicePaper.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServicePaper_Click);
+
+            // Agenda Pts
+            this.btnAgendaPts.Label = "Agenda Pts";
+            this.btnAgendaPts.Name = "btnAgendaPts";
+            this.btnAgendaPts.ShowImage = true;
+            this.btnAgendaPts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAgendaPts_Click);
+
+            // Op Notes
+            this.btnOpNotes.Label = "Op Notes";
+            this.btnOpNotes.Name = "btnOpNotes";
+            this.btnOpNotes.ShowImage = true;
+            this.btnOpNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpNotes_Click);
+
+            // MoM
+            this.btnMoM.Label = "MoM";
+            this.btnMoM.Name = "btnMoM";
+            this.btnMoM.ShowImage = true;
+            this.btnMoM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMoM_Click);
+
+            // E-mail Format
+            this.btnEmailFormat.Label = "E-mail Format";
+            this.btnEmailFormat.Name = "btnEmailFormat";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEmailFormat_Click);
             // 
             // AbbreviationRibbon
             // 
@@ -192,8 +236,97 @@ namespace AbbreviationWordAddin
 
         private void btnGeneralFormat_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.GeneralFormat.docx", "GeneralFormat.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.General Format.docx", "General Format.docx");
+            InsertTemplate(templatePath);
+        }
 
+
+        private void btnDoLetter_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.DO Letter.docx", "DO Letter.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnNotingSheet_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Noting Sheet.docx", "Noting Sheet.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnSignalForm_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Signal Form.docx", "Signal Form.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnStatementOfCase_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Statement of Case.docx", "Statement of Case.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnStatementOfCaseDPM_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Statement of Case (DPM).docx", "Statement of Case (DPM).docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnAppxFormat_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appx Format.docx", "Appx Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnServicePaper_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Service Paper.docx", "Service Paper.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnAgendaPts_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Agenda Pts.docx", "Agenda Pts.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnOpNotes_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op Notes.docx", "Op Notes.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnMoM_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.MoM.docx", "MoM.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnEmailFormat_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.E-mail Format.docx", "E-mail Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        public static string ExtractTemplateToLocal(string resourceName, string outputFileName)
+        {
+            string outputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AbbreviationWordAddin", "Templates");
+            Directory.CreateDirectory(outputDir);
+
+            string fullPath = Path.Combine(outputDir, outputFileName);
+
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+            using (FileStream fileStream = new FileStream(fullPath, FileMode.Create))
+            {
+                stream.CopyTo(fileStream);
+            }
+
+            return fullPath;
+        }
+
+       
+
+        private void InsertTemplate(string templatePath)
+        {
             if (!File.Exists(templatePath))
             {
                 MessageBox.Show("Template not found: " + templatePath);
@@ -227,146 +360,6 @@ namespace AbbreviationWordAddin
         }
 
 
-        private void btnServiceLetterFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            OpenTemplate("ServiceLetterFormat.dotx");
-        }
-
-        private void btnSalaryCertificateFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            OpenTemplate("ServiceLetterFormat.dotx");
-        }
-
-        private void btnExperienceCertificateFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            OpenTemplate("GeneralFormat.dotx");
-        }
-
-        private void btnOfferLetterFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            OpenTemplate("GeneralFormat.dotx");
-        }
-
-        private void btnAppointmentLetterFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            OpenTemplate("GeneralFormat.dotx");
-        }
-
-        public static string ExtractTemplateToLocal(string resourceName, string outputFileName)
-        {
-            string outputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AbbreviationWordAddin", "Templates");
-            Directory.CreateDirectory(outputDir);
-
-            string fullPath = Path.Combine(outputDir, outputFileName);
-
-            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
-            using (FileStream fileStream = new FileStream(fullPath, FileMode.Create))
-            {
-                stream.CopyTo(fileStream);
-            }
-
-            return fullPath;
-        }
-
-        private void OpenTemplate(string templateFileName)
-        {
-            // Get the folder where Abbreviations.xlsx is located
-            string basePath = System.IO.Path.GetDirectoryName(
-                System.IO.Path.Combine(
-                    System.Windows.Forms.Application.StartupPath,
-                    "Abbreviations.xlsx"
-                )
-            );
-
-            System.Windows.Forms.MessageBox.Show(
-                "Base File path" + basePath,
-                            "Abbreviation Loading status",
-                            System.Windows.Forms.MessageBoxButtons.OK,
-                            System.Windows.Forms.MessageBoxIcon.Information
-                        );
-
-            string templatePath = System.IO.Path.Combine(basePath, templateFileName);
-
-            var wordApp = Globals.ThisAddIn.Application;
-            wordApp.Documents.Add(Template: templatePath);
-        }
-
-        private void InsertTemplate(string templateName)
-        {
-            try
-            {
-                string templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Templates", templateName);
-                if (!File.Exists(templatePath))
-                {
-                    MessageBox.Show("Template not found: " + templatePath);
-                    return;
-                }
-
-                // Open template document invisibly
-                var tempDoc = Globals.ThisAddIn.Application.Documents.Open(templatePath, Visible: false);
-
-                // Copy its content
-                tempDoc.Content.Copy();
-                tempDoc.Close(false);
-
-                // Paste into current document
-                Globals.ThisAddIn.Application.Selection.Paste();
-
-                MessageBox.Show("Template inserted successfully!");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Failed to insert template: " + ex.Message);
-            }
-        }
-
-
-
-        private void InsertTemplateFromEmbeddedResource(string resourceName)
-        {
-            try
-            {
-                var wordApp = Globals.ThisAddIn.Application;
-                Word.Document activeDoc = wordApp.ActiveDocument;
-
-                var assembly = Assembly.GetExecutingAssembly();
-
-                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                    {
-                        throw new Exception($"Resource not found: {resourceName}");
-                    }
-
-                    // Create a temp file to write the .dotx content
-                    string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".dotx");
-                    using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
-                    {
-                        stream.CopyTo(fileStream);
-                    }
-
-                    // Open the .dotx file invisibly
-                    Word.Document tempDoc = wordApp.Documents.Open(tempPath, ReadOnly: true, Visible: false);
-                    tempDoc.Content.Copy();
-                    tempDoc.Close(SaveChanges: false);
-
-                    wordApp.Selection.Paste();
-
-                    System.Windows.Forms.MessageBox.Show("Template inserted successfully from embedded resource.");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Windows.Forms.MessageBox.Show(
-                    $"Error inserting embedded template: {ex.Message}",
-                    "Error",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Error
-                );
-            }
-        }
-
-
         #endregion
 
         internal Microsoft.Office.Tools.Ribbon.RibbonTab tab1;
@@ -378,11 +371,17 @@ namespace AbbreviationWordAddin
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnHighlightAll;
         internal Microsoft.Office.Tools.Ribbon.RibbonMenu menuTemplates;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnGeneralFormat;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnServiceLetterFormat;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSalaryCertificateFormat;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnExperienceCertificateFormat;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnOfferLetterFormat;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAppointmentLetterFormat;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnDoLetter;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnNotingSheet;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSignalForm;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnStatementOfCase;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnStatementOfCaseDPM;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAppxFormat;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnServicePaper;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAgendaPts;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnOpNotes;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMoM;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnEmailFormat;
     }
 
     partial class ThisRibbonCollection

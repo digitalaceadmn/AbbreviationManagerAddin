@@ -566,37 +566,42 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string abbreviation)
         {
-            Word.Selection sel = this.Application.Selection;
-            if (sel == null || sel.Range == null) return;
-
-            string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
-            if (string.IsNullOrEmpty(fullForm)) return;
-
-            Word.Range wordRange = sel.Range.Duplicate;
-
-            int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
-            wordRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
-            wordRange.Text = fullForm + " ";
-
-            sel.SetRange(wordRange.End, wordRange.End);
-
             try
             {
-                var autoCorrect = this.Application.AutoCorrect;
-                autoCorrect.ReplaceText = true;
+                Word.Selection sel = this.Application.Selection;
+                if (sel == null || sel.Range == null) return;
 
-                if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == abbreviation))
+                string fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
+                if (string.IsNullOrEmpty(fullForm)) return;
+
+                Word.Range replaceRange = sel.Range.Duplicate;
+
+                int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                replaceRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+
+                string existingText = replaceRange.Text.Trim();
+
+                if (existingText.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    autoCorrect.Entries.Add(abbreviation, fullForm);
+                    replaceRange.Text = fullForm + " ";
+                    sel.SetRange(replaceRange.End, replaceRange.End);  // Move cursor after inserted abbreviation
                 }
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                Debug.WriteLine($"Could not add '{abbreviation}' to AutoCorrect.");
-            }
 
-            this.Application.ActiveWindow.SetFocus();
+                // Optional: Add to AutoCorrect if desired
+                var autoCorrect = this.Application.AutoCorrect;
+                if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
+                {
+                    autoCorrect.Entries.Add(inputText, fullForm);
+                }
+
+                this.Application.ActiveWindow.SetFocus();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error replacing from suggestion: " + ex.Message);
+            }
         }
+
 
         /// <summary>
         /// Timer: Checks current word every interval.
