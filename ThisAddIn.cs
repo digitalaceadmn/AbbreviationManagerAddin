@@ -24,6 +24,12 @@ namespace AbbreviationWordAddin
         private Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
         private SuggestionPaneControl suggestionPaneControl;
         private int maxPhraseLength = 12;
+        private bool isReplacing = false;
+
+        private string lastReplacedShortForm = "";
+        private string lastReplacedFullForm = "";
+        private bool justUndone = false;
+
 
         private string lastWord = "";
         private Timer typingTimer;
@@ -566,6 +572,8 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string abbreviation)
         {
+            isReplacing = true;
+
             try
             {
                 Word.Selection sel = this.Application.Selection;
@@ -579,15 +587,9 @@ namespace AbbreviationWordAddin
                 int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
                 replaceRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
 
-                string existingText = replaceRange.Text.Trim();
+                replaceRange.Text = fullForm + " ";
+                sel.SetRange(replaceRange.End, replaceRange.End);
 
-                if (existingText.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    replaceRange.Text = fullForm + " ";
-                    sel.SetRange(replaceRange.End, replaceRange.End);  // Move cursor after inserted abbreviation
-                }
-
-                // Optional: Add to AutoCorrect if desired
                 var autoCorrect = this.Application.AutoCorrect;
                 if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
                 {
@@ -596,9 +598,9 @@ namespace AbbreviationWordAddin
 
                 this.Application.ActiveWindow.SetFocus();
             }
-            catch (Exception ex)
+            finally
             {
-                Debug.WriteLine("Error replacing from suggestion: " + ex.Message);
+                isReplacing = false;
             }
         }
 
@@ -853,143 +855,76 @@ namespace AbbreviationWordAddin
 
         private void TypingTimer_Tick(object sender, EventArgs e)
         {
+            if (isReplacing) return;
             try
             {
                 Word.Selection sel = this.Application.Selection;
+                if (sel?.Range == null) return;
 
-                if (sel?.Range != null)
+                for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
                 {
-                    for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
+                    Word.Range testRange = sel.Range.Duplicate;
+                    testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+                    testRange.MoveEnd(Word.WdUnits.wdWord, 0);
+
+                    string candidate = testRange.Text?.Trim();
+                    if (string.IsNullOrEmpty(candidate)) continue;
+
+                    if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
-                        Word.Range testRange = sel.Range.Duplicate;
-                        testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
-                        testRange.MoveEnd(Word.WdUnits.wdWord, 0);
-
-                        string candidate = testRange.Text?.Trim();
-
-                        if (!string.IsNullOrEmpty(candidate))
+                        if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
+                            && !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            var matches = AbbreviationManager.GetAllPhrases()
-                                .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
-                                .ToList();
-
-                            if (matches.Count > 0)
-                            {
-                                var exactMatch = matches
-                                    .FirstOrDefault(p => p.Equals(candidate, StringComparison.InvariantCultureIgnoreCase));
-
-                                if (!string.IsNullOrEmpty(exactMatch))
-                                {
-                                    bool hasLongerMatch = matches.Any(p =>
-                                    {
-                                        var words = p.Split(' ');
-                                        var candidateWords = candidate.Split(' ');
-                                        return words.Length > candidateWords.Length;
-                                    });
-
-                                    if (hasLongerMatch)
-                                    {
-                                        string nextWord = GetNextWord(sel);
-                                        bool nextWordMatchesLonger = matches.Any(p =>
-                                        {
-                                            var words = p.Split(' ');
-                                            var candidateWords = candidate.Split(' ');
-
-                                            if (words.Length > candidateWords.Length)
-                                            {
-                                                string expectedNextWord = words[candidateWords.Length];
-                                                return expectedNextWord.StartsWith(nextWord, StringComparison.InvariantCultureIgnoreCase);
-                                            }
-                                            return false;
-                                        });
-
-                                        if (!string.IsNullOrWhiteSpace(nextWord) && !nextWordMatchesLonger)
-                                        {
-                                            // NEW: Fallback to shorter match if possible
-                                            var shorterExact = matches
-                                                .Where(p => !string.Equals(p, candidate, StringComparison.InvariantCultureIgnoreCase))
-                                                .OrderByDescending(p => p.Split(' ').Length)
-                                                .FirstOrDefault(p => p.Equals(string.Join(" ", p.Split(' ')), StringComparison.InvariantCultureIgnoreCase));
-
-                                            if (string.IsNullOrEmpty(shorterExact))
-                                            {
-                                                shorterExact = matches
-                                                    .OrderByDescending(p => p.Split(' ').Length)
-                                                    .FirstOrDefault(p =>
-                                                    {
-                                                        var candidateWords = candidate.Split(' ');
-                                                        var words = p.Split(' ');
-                                                        if (words.Length < candidateWords.Length)
-                                                        {
-                                                            var candidatePrefix = string.Join(" ", candidateWords.Take(words.Length));
-                                                            return candidatePrefix.Equals(p, StringComparison.InvariantCultureIgnoreCase);
-                                                        }
-                                                        return false;
-                                                    });
-                                            }
-
-                                            if (!string.IsNullOrEmpty(shorterExact))
-                                            {
-                                                var candidateWords = candidate.Split(' ');
-                                                var shorterWords = shorterExact.Split(' ');
-
-                                                int difference = candidateWords.Length - shorterWords.Length;
-
-                                                if (difference > 0)
-                                                {
-                                                    testRange.MoveStart(Word.WdUnits.wdWord, -difference);
-                                                }
-
-                                                ReplaceWithFullForm(shorterExact, testRange, sel);
-                                                return;
-                                            }
-
-                                            ReplaceWithFullForm(exactMatch, testRange, sel);
-                                            return;
-                                        }
-                                        else
-                                        {
-                                            // Wait for longer phrase: show suggestions
-                                            this.lastWord = candidate;
-                                            suggestionPaneControl.SetInputText(candidate);
-                                            suggestionPaneControl.ShowSuggestions(matches);
-                                            return;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        string nextWord = GetNextWord(sel);
-                                        if (!string.IsNullOrWhiteSpace(nextWord))
-                                        {
-                                            ReplaceWithFullForm(exactMatch, testRange, sel);
-                                            return;
-                                        }
-                                        else
-                                        {
-                                            if (sel.Range.Start > 0)
-                                            {
-                                                Word.Range charRange = sel.Range.Duplicate;
-                                                charRange.MoveStart(Word.WdUnits.wdCharacter, -1);
-                                                string lastChar = charRange.Text;
-
-                                                if (lastChar == " ")
-                                                {
-                                                    ReplaceWithFullForm(exactMatch, testRange, sel);
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    this.lastWord = candidate;
-                                    suggestionPaneControl.SetInputText(candidate);
-                                    suggestionPaneControl.ShowSuggestions(matches);
-                                    return;
-                                }
-                            }
+                            justUndone = true;
+                            Debug.WriteLine($"Detected undo for: {lastReplacedShortForm}");
                         }
+                    }
+
+                    var matches = AbbreviationManager.GetAllPhrases()
+                        .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+                        .ToList();
+
+                    if (matches.Count == 0) continue;
+
+                    bool hasExact = matches.Any(p =>
+                        string.Equals(p, candidate, StringComparison.InvariantCultureIgnoreCase));
+
+                    bool hasLonger = matches.Any(p =>
+                        p.Split(' ').Length > candidate.Split(' ').Length);
+
+                    if (hasExact && !hasLonger)
+                    {
+                        if (justUndone && string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            Debug.WriteLine($"Skipping replacement for {candidate} because it was just undone.");
+                            return;
+                        }
+
+                        // Only exact, no longer — check for trailing space
+                        if (IsLastCharSpace(sel))
+                        {
+                            ReplaceWithFullForm(candidate, testRange, sel);
+
+                            lastReplacedShortForm = candidate;
+                            lastReplacedFullForm = GetFullFormFor(candidate); 
+
+                            justUndone = false; 
+                        }
+                        return;
+                    }
+                    else if (hasExact && hasLonger)
+                    {
+                        // Wait — possible longer match, show suggestions
+                        suggestionPaneControl.SetInputText(candidate);
+                        suggestionPaneControl.ShowSuggestions(matches);
+                        return;
+                    }
+                    else
+                    {
+                        // No exact, but possible matches — show suggestions
+                        suggestionPaneControl.SetInputText(candidate);
+                        suggestionPaneControl.ShowSuggestions(matches);
+                        return;
                     }
                 }
             }
@@ -999,7 +934,24 @@ namespace AbbreviationWordAddin
             }
         }
 
+        private bool IsLastCharSpace(Word.Selection sel)
+        {
+            if (sel.Range.Start > 0)
+            {
+                Word.Range charRange = sel.Range.Duplicate;
+                charRange.MoveStart(Word.WdUnits.wdCharacter, -1);
+                string lastChar = charRange.Text;
+                return lastChar == " ";
+            }
+            return false;
+        }
 
+
+        private string GetFullFormFor(string shortForm)
+        {
+            // Example: adjust to your lookup logic
+            return AbbreviationManager.GetAbbreviation(shortForm);
+        }
 
 
         private void ReplaceWithFullForm(string matchedPhrase, Word.Range replaceRange, Word.Selection sel)
