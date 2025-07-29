@@ -32,6 +32,7 @@ namespace AbbreviationWordAddin
         private List<(string Word, string Replacement)> _phraseCache;
         private System.Windows.Forms.Timer debounceTimer;
         private const int DebounceDelayMs = 300;
+        private string lastUndoneWord = null;
 
 
         private string lastWord = "";
@@ -667,7 +668,7 @@ namespace AbbreviationWordAddin
             debounceTimer.Start();
         }
 
-       
+
 
 
         private void DebounceTimer_Tick(object sender, EventArgs e)
@@ -689,14 +690,23 @@ namespace AbbreviationWordAddin
                     if (string.IsNullOrEmpty(candidate)) continue;
                     if (candidate.Length < 3) continue;
 
+                    // Detect undo if previous replacement found again as short form
                     if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
                             && !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            justUndone = true;
                             Debug.WriteLine($"Detected undo for: {lastReplacedShortForm}");
+                            lastUndoneWord = lastReplacedShortForm;
                         }
+                    }
+
+                    // ❌ Prevent replacing if just undone
+                    if (!string.IsNullOrEmpty(lastUndoneWord)
+                        && string.Equals(candidate, lastUndoneWord, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        Debug.WriteLine($"Skipping replacement for {candidate} because it was just undone.");
+                        return;
                     }
 
                     var matches = AbbreviationManager.GetAllPhrases()
@@ -714,12 +724,6 @@ namespace AbbreviationWordAddin
 
                     if (hasExact && !hasLonger)
                     {
-                        if (justUndone && string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            Debug.WriteLine($"Skipping replacement for {candidate} because it was just undone.");
-                            return;
-                        }
-
                         if (IsLastCharSpace(sel))
                         {
                             ReplaceWithFullForm(candidate, testRange, sel);
@@ -727,7 +731,8 @@ namespace AbbreviationWordAddin
                             lastReplacedShortForm = candidate;
                             lastReplacedFullForm = GetFullFormFor(candidate);
 
-                            justUndone = false;
+                            // ✅ Clear the undo block because user accepted a new replacement
+                            lastUndoneWord = null;
                         }
                         return;
                     }
@@ -744,6 +749,9 @@ namespace AbbreviationWordAddin
                         return;
                     }
                 }
+
+                // ✅ If no match — clear the undo word so we don’t block forever
+                lastUndoneWord = null;
             }
             catch (Exception ex)
             {
