@@ -25,6 +25,7 @@ namespace AbbreviationWordAddin
         private SuggestionPaneControl suggestionPaneControl;
         private int maxPhraseLength = 12;
         private bool isReplacing = false;
+        private bool isAbbreviationEnabled = true;
 
         private string lastReplacedShortForm = "";
         private string lastReplacedFullForm = "";
@@ -33,6 +34,10 @@ namespace AbbreviationWordAddin
         private System.Windows.Forms.Timer debounceTimer;
         private const int DebounceDelayMs = 300;
         private string lastUndoneWord = null;
+
+        private Trie trie = new Trie();
+
+        private List<string> allPhrases;
 
 
         private string lastWord = "";
@@ -81,7 +86,15 @@ namespace AbbreviationWordAddin
                 }
 
 
-                AbbreviationManager.LoadAbbreviations(); 
+                AbbreviationManager.LoadAbbreviations();
+
+                allPhrases = AbbreviationManager.GetAllPhrases().ToList();
+
+                trie = new Trie();
+                foreach (var phrase in allPhrases)
+                {
+                    trie.Insert(phrase.ToLowerInvariant());
+                }
 
                 loadAllAbbreviaitons();
 
@@ -256,11 +269,13 @@ namespace AbbreviationWordAddin
                 reloadAbbrDataFromDict = enable;
                 if (reloadAbbrDataFromDict)
                 {
+                    isAbbreviationEnabled = true;
                     AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");
                 }
                 else
                 {
+                    isAbbreviationEnabled = false;
                     AbbreviationManager.ClearAutoCorrectCache();
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
                 }
@@ -567,7 +582,7 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void SuggestionPaneControl_OnTextChanged(string inputText)
         {
-            var matches = AbbreviationManager.GetAllPhrases()
+            var matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
                 .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
                 .ToList();
 
@@ -580,71 +595,34 @@ namespace AbbreviationWordAddin
         private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string fullForm)
         {
             isReplacing = true;
-
             try
             {
                 Word.Selection sel = this.Application.Selection;
-                if (sel == null || sel.Range == null) return;
+                if (sel == null) return;
 
-                Word.Range replaceRange = sel.Range.Duplicate;
+                Word.Range wordRange = sel.Range.Duplicate;
+                wordRange.MoveStart(Word.WdUnits.wdWord, -1);
 
-                inputText = inputText.Trim();
-                fullForm = fullForm.Trim();
+                string wordToReplace = wordRange.Text.Trim();
 
-                int wordCount = inputText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
-                int availableWords = replaceRange.Words.Count;
-                int safeWordCount = Math.Min(wordCount, availableWords);
-
-                Debug.WriteLine($"Replacing: '{inputText}' -> '{fullForm}' | WordCount: {wordCount}, SafeWordCount: {safeWordCount}");
-
-                if (safeWordCount > 0)
+                if (wordToReplace.Equals(inputText.Trim(), StringComparison.InvariantCultureIgnoreCase))
                 {
-                    replaceRange.MoveStart(Word.WdUnits.wdWord, -safeWordCount);
+                    wordRange.Text = fullForm + " ";
+                    sel.SetRange(wordRange.End, wordRange.End);
                 }
-
-                if (replaceRange.Start > 0)
-                {
-                    int paraStart = replaceRange.Paragraphs[1].Range.Start;
-
-                    replaceRange.MoveStartWhile(" \t", Word.WdConstants.wdBackward);
-
-                    // Prevent moving into the previous paragraph
-                    if (replaceRange.Start < paraStart)
-                    {
-                        replaceRange.Start = paraStart;
-                    }
-                }
-
-                Debug.WriteLine($"Range Text before: '{replaceRange.Text}'");
-
-                // If there’s no space before the range and it’s not at the paragraph start, add one
-                Word.Range checkRange = replaceRange.Duplicate;
-                checkRange.SetRange(replaceRange.Start - 1, replaceRange.Start);
-
-                string prefix = "";
-                if (replaceRange.Start > replaceRange.Paragraphs[1].Range.Start && checkRange.Text != " ")
-                {
-                    prefix = " ";
-                }
-
-                replaceRange.Text = prefix + fullForm + " ";
-                Debug.WriteLine($"Range Text after: '{replaceRange.Text}'");
-
-                sel.SetRange(replaceRange.End, replaceRange.End);
 
                 var autoCorrect = this.Application.AutoCorrect;
                 if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
                 {
                     autoCorrect.Entries.Add(inputText, fullForm);
                 }
-
-                this.Application.ActiveWindow.SetFocus();
             }
             finally
             {
                 isReplacing = false;
             }
         }
+
 
 
 
@@ -673,9 +651,9 @@ namespace AbbreviationWordAddin
 
         private void DebounceTimer_Tick(object sender, EventArgs e)
         {
-            debounceTimer.Stop(); // Stop so it doesn’t keep firing
-
-            try
+            debounceTimer.Stop();
+            if (isAbbreviationEnabled) { 
+                try
             {
                 Word.Selection sel = this.Application.Selection;
                 if (sel?.Range == null) return;
@@ -709,12 +687,13 @@ namespace AbbreviationWordAddin
                         return;
                     }
 
-                    var matches = AbbreviationManager.GetAllPhrases()
-                        .Where(p => p.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
-                        .Select(p => (Word: p, Replacement: GetFullFormFor(p)))
-                        .ToList();
+                        string lowerCandidate = candidate.ToLowerInvariant();
 
-                    if (matches.Count == 0) continue;
+                        var matches = trie.GetWordsWithPrefix(lowerCandidate)
+                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                            .ToList();
+
+                        if (matches.Count == 0) continue;
 
                     bool hasExact = matches.Any(p =>
                         string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
@@ -757,6 +736,7 @@ namespace AbbreviationWordAddin
             {
                 Debug.WriteLine("Error in DebounceTimer_Tick: " + ex.Message);
             }
+            }
         }
 
         private bool IsLastCharSpace(Word.Selection sel)
@@ -791,21 +771,45 @@ namespace AbbreviationWordAddin
             }
         }
 
-        private string GetNextWord(Word.Selection sel)
+
+        public class TrieNode
         {
-            Word.Range testRange = sel.Range.Duplicate;
-            testRange.MoveStart(Word.WdUnits.wdWord, -1);
-            testRange.MoveEnd(Word.WdUnits.wdWord, 1);
-
-            string[] words = testRange.Text.Trim().Split(' ');
-            if (words.Length > 1)
-            {
-                return words.Last();
-            }
-
-            return "";
+            public Dictionary<char, TrieNode> Children { get; } = new Dictionary<char, TrieNode>();
+            public List<string> Words { get; } = new List<string>();
         }
 
+        public class Trie
+        {
+            private readonly TrieNode root = new TrieNode();
+
+            public void Insert(string word)
+            {
+                var node = root;
+                foreach (char c in word)
+                {
+                    if (!node.Children.ContainsKey(c))
+                    {
+                        node.Children[c] = new TrieNode();
+                    }
+                    node = node.Children[c];
+                    node.Words.Add(word);
+                }
+            }
+
+            public List<string> GetWordsWithPrefix(string prefix)
+            {
+                var node = root;
+                foreach (char c in prefix)
+                {
+                    if (!node.Children.ContainsKey(c))
+                    {
+                        return new List<string>();
+                    }
+                    node = node.Children[c];
+                }
+                return node.Words.Distinct().ToList();
+            }
+        }
 
 
 
