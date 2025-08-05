@@ -150,67 +150,78 @@ namespace AbbreviationWordAddin
             this.btnGeneralFormat.ShowImage = true;
             this.btnGeneralFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGeneralFormat_Click);
             // 
-            // DO Letter
+            // btnDoLetter
+            // 
             this.btnDoLetter.Label = "DO Letter";
             this.btnDoLetter.Name = "btnDoLetter";
             this.btnDoLetter.ShowImage = true;
             this.btnDoLetter.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDoLetter_Click);
-
-            // Noting Sheet
+            // 
+            // btnNotingSheet
+            // 
             this.btnNotingSheet.Label = "Noting Sheet";
             this.btnNotingSheet.Name = "btnNotingSheet";
             this.btnNotingSheet.ShowImage = true;
             this.btnNotingSheet.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnNotingSheet_Click);
-
-            // Signal Form
+            // 
+            // btnSignalForm
+            // 
             this.btnSignalForm.Label = "Signal Form";
             this.btnSignalForm.Name = "btnSignalForm";
             this.btnSignalForm.ShowImage = true;
             this.btnSignalForm.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSignalForm_Click);
-
-            // Statement of Case
+            // 
+            // btnStatementOfCase
+            // 
             this.btnStatementOfCase.Label = "Statement of Case";
             this.btnStatementOfCase.Name = "btnStatementOfCase";
             this.btnStatementOfCase.ShowImage = true;
             this.btnStatementOfCase.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCase_Click);
-
-            // Statement of Case (DPM)
+            // 
+            // btnStatementOfCaseDPM
+            // 
             this.btnStatementOfCaseDPM.Label = "Statement of Case (DPM)";
             this.btnStatementOfCaseDPM.Name = "btnStatementOfCaseDPM";
             this.btnStatementOfCaseDPM.ShowImage = true;
             this.btnStatementOfCaseDPM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCaseDPM_Click);
-
-            // Appx Format
+            // 
+            // btnAppxFormat
+            // 
             this.btnAppxFormat.Label = "Appx Format";
             this.btnAppxFormat.Name = "btnAppxFormat";
             this.btnAppxFormat.ShowImage = true;
             this.btnAppxFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppxFormat_Click);
-
-            // Service Paper
+            // 
+            // btnServicePaper
+            // 
             this.btnServicePaper.Label = "Service Paper";
             this.btnServicePaper.Name = "btnServicePaper";
             this.btnServicePaper.ShowImage = true;
             this.btnServicePaper.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServicePaper_Click);
-
-            // Agenda Pts
+            // 
+            // btnAgendaPts
+            // 
             this.btnAgendaPts.Label = "Agenda Pts";
             this.btnAgendaPts.Name = "btnAgendaPts";
             this.btnAgendaPts.ShowImage = true;
             this.btnAgendaPts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAgendaPts_Click);
-
-            // Op Notes
+            // 
+            // btnOpNotes
+            // 
             this.btnOpNotes.Label = "Op Notes";
             this.btnOpNotes.Name = "btnOpNotes";
             this.btnOpNotes.ShowImage = true;
             this.btnOpNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpNotes_Click);
-
-            // MoM
+            // 
+            // btnMoM
+            // 
             this.btnMoM.Label = "MoM";
             this.btnMoM.Name = "btnMoM";
             this.btnMoM.ShowImage = true;
             this.btnMoM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMoM_Click);
-
-            // E-mail Format
+            // 
+            // btnEmailFormat
+            // 
             this.btnEmailFormat.Label = "E-mail Format";
             this.btnEmailFormat.Name = "btnEmailFormat";
             this.btnEmailFormat.ShowImage = true;

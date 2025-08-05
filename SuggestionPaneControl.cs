@@ -38,9 +38,12 @@ namespace AbbreviationWordAddin
                 string word = selected.SubItems[0].Text;
                 string replacement = selected.SubItems[1].Text;
 
+                MessageBox.Show($"You selected: {word} → {replacement}");
+
                 OnSuggestionAccepted?.Invoke(word, replacement);
             }
         }
+
 
         public void ShowSuggestions(List<(string Word, string Replacement)> suggestions)
         {
@@ -56,6 +59,11 @@ namespace AbbreviationWordAddin
         public void SetInputText(string text)
         {
             textBoxInput.Text = text;
+        }
+
+        private void listBoxSuggestions_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

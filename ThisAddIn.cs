@@ -22,7 +22,6 @@ namespace AbbreviationWordAddin
         string lastLoadedVersion = Properties.Settings.Default.LastLoadedAbbreviationVersion;
         string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
         private Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
-        private SuggestionPaneControl suggestionPaneControl;
         private int maxPhraseLength = 12;
         private bool isReplacing = false;
         private bool isAbbreviationEnabled = true;
@@ -42,6 +41,7 @@ namespace AbbreviationWordAddin
 
         private string lastWord = "";
         private Timer typingTimer;
+        internal SuggestionPaneControl SuggestionPaneControl;
 
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
@@ -98,11 +98,10 @@ namespace AbbreviationWordAddin
 
                 loadAllAbbreviaitons();
 
-                suggestionPaneControl = new SuggestionPaneControl();
-                suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
-                suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
-
-                suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+                SuggestionPaneControl = new SuggestionPaneControl();
+                suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
+                SuggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+                SuggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
                 suggestionTaskPane.Visible = true;
 
                 typingTimer = new Timer { Interval = 300 };
@@ -138,16 +137,6 @@ namespace AbbreviationWordAddin
             EnsureTaskPaneVisible();
         }
 
-        //private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
-        //{
-        //    System.Windows.Forms.MessageBox.Show(
-        //                       "Taskpane3",
-        //                       "AutoCorrect Entries",
-        //                       System.Windows.Forms.MessageBoxButtons.OK,
-        //                       System.Windows.Forms.MessageBoxIcon.Information
-        //                   );
-        //    EnsureTaskPaneVisible();
-        //}
 
         private void EnsureTaskPaneVisible()
         {
@@ -162,11 +151,8 @@ namespace AbbreviationWordAddin
             }
 
             // If not found, create a new one
-            suggestionPaneControl = new SuggestionPaneControl();
-            suggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
-            suggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
-
-            suggestionTaskPane = this.CustomTaskPanes.Add(suggestionPaneControl, "Abbreviation Suggestions");
+            SuggestionPaneControl = new SuggestionPaneControl();
+            suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
             suggestionTaskPane.Visible = true;
         }
 
@@ -586,7 +572,7 @@ namespace AbbreviationWordAddin
                 .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
                 .ToList();
 
-            suggestionPaneControl.ShowSuggestions(matches);
+            SuggestionPaneControl.ShowSuggestions(matches);
         }
 
         /// <summary>
@@ -600,21 +586,30 @@ namespace AbbreviationWordAddin
                 Word.Selection sel = this.Application.Selection;
                 if (sel == null) return;
 
-                Word.Range wordRange = sel.Range.Duplicate;
-                wordRange.MoveStart(Word.WdUnits.wdWord, -1);
+                Word.Range sentenceRange = sel.Range.Sentences.First; // Or use Paragraphs.First
+                string sentenceText = sentenceRange.Text;
 
-                string wordToReplace = wordRange.Text.Trim();
-
-                if (wordToReplace.Equals(inputText.Trim(), StringComparison.InvariantCultureIgnoreCase))
+                // Find exact match of the input phrase in the sentence
+                int index = sentenceText.IndexOf(inputText, StringComparison.InvariantCultureIgnoreCase);
+                if (index >= 0)
                 {
-                    wordRange.Text = fullForm + " ";
-                    sel.SetRange(wordRange.End, wordRange.End);
+                    Word.Range matchRange = sentenceRange.Duplicate;
+                    matchRange.Start = sentenceRange.Start + index;
+                    matchRange.End = matchRange.Start + inputText.Length;
+
+                    matchRange.Text = fullForm + " ";
+                    sel.SetRange(matchRange.End, matchRange.End);
+
+                    // Optionally add to AutoCorrect
+                    var autoCorrect = this.Application.AutoCorrect;
+                    if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
+                    {
+                        autoCorrect.Entries.Add(inputText, fullForm);
+                    }
                 }
-
-                var autoCorrect = this.Application.AutoCorrect;
-                if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
+                else
                 {
-                    autoCorrect.Entries.Add(inputText, fullForm);
+                    MessageBox.Show($"Phrase not found in sentence.\nInput = '{inputText}'\nSentence = '{sentenceText}'");
                 }
             }
             finally
@@ -622,6 +617,7 @@ namespace AbbreviationWordAddin
                 isReplacing = false;
             }
         }
+
 
 
 
@@ -668,7 +664,6 @@ namespace AbbreviationWordAddin
                     if (string.IsNullOrEmpty(candidate)) continue;
                     if (candidate.Length < 3) continue;
 
-                    // Detect undo if previous replacement found again as short form
                     if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
@@ -695,36 +690,38 @@ namespace AbbreviationWordAddin
 
                         if (matches.Count == 0) continue;
 
-                    bool hasExact = matches.Any(p =>
-                        string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
+                        bool hasExact = matches.Any(p =>
+                            string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
 
-                    bool hasLonger = matches.Any(p =>
-                        p.Word.Split(' ').Length > candidate.Split(' ').Length);
+                        bool hasLonger = matches.Any(p =>
+                            p.Word.Split(' ').Length > candidate.Split(' ').Length);
 
-                    if (hasExact && !hasLonger)
-                    {
-                        if (IsLastCharSpace(sel))
+                        if (hasExact && !hasLonger)
                         {
-                            ReplaceWithFullForm(candidate, testRange, sel);
+                            // Only replace if there are no other longer phrases starting with this word
+                            if (IsLastCharSpace(sel))
+                            {
+                                ReplaceWithFullForm(candidate, testRange, sel);
 
-                            lastReplacedShortForm = candidate;
-                            lastReplacedFullForm = GetFullFormFor(candidate);
+                                lastReplacedShortForm = candidate;
+                                lastReplacedFullForm = GetFullFormFor(candidate);
 
-                            // ✅ Clear the undo block because user accepted a new replacement
-                            lastUndoneWord = null;
+                                // ✅ Clear the undo block because user accepted a new replacement
+                                lastUndoneWord = null;
+                            }
+                            return;
                         }
-                        return;
-                    }
-                    else if (hasExact && hasLonger)
+                        else if (hasExact && hasLonger)
+                        {
+                            // ❗ DO NOT replace immediately — suggest instead
+                            SuggestionPaneControl.SetInputText(candidate);
+                            SuggestionPaneControl.ShowSuggestions(matches);
+                            return;
+                        }
+                        else
                     {
-                        suggestionPaneControl.SetInputText(candidate);
-                        suggestionPaneControl.ShowSuggestions(matches);
-                        return;
-                    }
-                    else
-                    {
-                        suggestionPaneControl.SetInputText(candidate);
-                        suggestionPaneControl.ShowSuggestions(matches);
+                        SuggestionPaneControl.SetInputText(candidate);
+                        SuggestionPaneControl.ShowSuggestions(matches);
                         return;
                     }
                 }
