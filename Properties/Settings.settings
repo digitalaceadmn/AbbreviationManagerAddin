@@ -6,7 +6,7 @@
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="AbbreviationDataVersion" Type="System.String" Scope="User">
-      <Value Profile="(Default)">1.0.16</Value>
+      <Value Profile="(Default)">1.0.18</Value>
     </Setting>
     <Setting Name="LastLoadedAbbreviationVersion" Type="System.String" Scope="User">
       <Value Profile="(Default)">1.0.0</Value>

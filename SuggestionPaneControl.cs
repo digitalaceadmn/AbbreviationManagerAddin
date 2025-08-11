@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace AbbreviationWordAddin
@@ -8,6 +9,7 @@ namespace AbbreviationWordAddin
     {
         public event Action<string> OnTextChanged;
         public event Action<string, string> OnSuggestionAccepted;
+        private bool isSuggestionListFrozen = false;
 
         public SuggestionPaneControl()
         {
@@ -19,10 +21,11 @@ namespace AbbreviationWordAddin
             // Setup ListView
             this.listBoxSuggestions.View = View.Details;
             this.listBoxSuggestions.FullRowSelect = true;
-            this.listBoxSuggestions.Columns.Add("Word/Phrase", 200);
             this.listBoxSuggestions.Columns.Add("Replacement", 200);
 
             this.listBoxSuggestions.DoubleClick += listBoxSuggestions_DoubleClick;
+            this.listBoxSuggestions.MouseEnter += listBoxSuggestions_MouseEnter;
+            this.listBoxSuggestions.MouseLeave += listBoxSuggestions_MouseLeave;
         }
 
         private void textBoxInput_TextChanged(object sender, EventArgs e)
@@ -35,18 +38,41 @@ namespace AbbreviationWordAddin
             if (listBoxSuggestions.SelectedItems.Count > 0)
             {
                 var selected = listBoxSuggestions.SelectedItems[0];
-                string word = selected.SubItems[0].Text;
-                string replacement = selected.SubItems[1].Text;
+                //string word = selected.SubItems[0].Text;
+                //string replacement = selected.SubItems[1].Text;
 
-                MessageBox.Show($"You selected: {word} → {replacement}");
 
-                OnSuggestionAccepted?.Invoke(word, replacement);
+                string shortForm = selected.SubItems[0].Text;  // "accounting unit"
+                string fullForm = selected.SubItems[1].Text;  // "au"
+
+                //MessageBox.Show($"You selected: {shortForm} → {fullForm}");
+
+
+                OnSuggestionAccepted?.Invoke(shortForm, fullForm);
+
+                //OnSuggestionAccepted?.Invoke(word, replacement);
             }
+        }
+
+        private void listBoxSuggestions_MouseEnter(object sender, EventArgs e)
+        {
+            isSuggestionListFrozen = true;
+        }
+
+        private void listBoxSuggestions_MouseLeave(object sender, EventArgs e)
+        {
+            isSuggestionListFrozen = false;
         }
 
 
         public void ShowSuggestions(List<(string Word, string Replacement)> suggestions)
         {
+            if (isSuggestionListFrozen)
+            {
+                Debug.WriteLine("Skipping suggestion refresh because list is frozen.");
+                return;
+            }
+
             listBoxSuggestions.Items.Clear();
             foreach (var suggestion in suggestions)
             {

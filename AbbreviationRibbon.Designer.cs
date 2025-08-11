@@ -227,6 +227,46 @@ namespace AbbreviationWordAddin
             this.btnEmailFormat.ShowImage = true;
             this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEmailFormat_Click);
             // 
+            // btnTourNotes
+            // 
+            this.btnEmailFormat.Label = "Tour notes";
+            this.btnEmailFormat.Name = "btnTourNotes";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTourNotes_Click);
+
+            // 
+            // btnAppreciation
+            // 
+            this.btnEmailFormat.Label = "Appreciation";
+            this.btnEmailFormat.Name = "btnAppreciation";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppreciation_Click);
+
+            // 
+            // btnCaseStudy
+            // 
+            this.btnEmailFormat.Label = "Case Study";
+            this.btnEmailFormat.Name = "btnCaseStudy";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
+
+            // 
+            // btnOpOrder
+            // 
+            this.btnEmailFormat.Label = "Op Order";
+            this.btnEmailFormat.Name = "btnOpOrder";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpOrder_Click);
+
+            // 
+            // btnWarningOrder
+            // 
+            this.btnEmailFormat.Label = "Warning Order";
+            this.btnEmailFormat.Name = "btnWarningOrder";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
+
+            // 
             // AbbreviationRibbon
             // 
             this.Name = "AbbreviationRibbon";
@@ -315,6 +355,36 @@ namespace AbbreviationWordAddin
         private void btnEmailFormat_Click(object sender, RibbonControlEventArgs e)
         {
             string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.E-mail Format.docx", "E-mail Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnTourNotes_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Tour Notes.docx", "Tour Notes.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnAppreciation_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appreciation.docx", "Appreciation.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnCaseStudy_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Case Study.docx", "Case Study.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnOpOrder_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op Order.docx", "Op Order.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnWarningOrder_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Warning Order.docx", "Warning Order.docx");
             InsertTemplate(templatePath);
         }
 

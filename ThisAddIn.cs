@@ -25,6 +25,7 @@ namespace AbbreviationWordAddin
         private int maxPhraseLength = 12;
         private bool isReplacing = false;
         private bool isAbbreviationEnabled = true;
+        private bool frozeSuggestions = false;
 
         private string lastReplacedShortForm = "";
         private string lastReplacedFullForm = "";
@@ -568,6 +569,7 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void SuggestionPaneControl_OnTextChanged(string inputText)
         {
+            frozeSuggestions = false;
             var matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
                 .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
                 .ToList();
@@ -578,45 +580,140 @@ namespace AbbreviationWordAddin
         /// <summary>
         /// Event: User accepted a suggestion.
         /// </summary>
-        private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string fullForm)
+        //private void SuggestionPaneControl_OnSuggestionAccepted(string inputText, string fullForm)
+        //{
+        //    isReplacing = true;
+        //    try
+        //    {
+        //        Word.Selection sel = this.Application.Selection;
+        //        if (sel == null) return;
+
+        //        Word.Range sentenceRange = sel.Range.Sentences.First; // Or use Paragraphs.First
+        //        string sentenceText = sentenceRange.Text;
+
+        //        // Find exact match of the input phrase in the sentence
+        //        int index = sentenceText.IndexOf(inputText, StringComparison.InvariantCultureIgnoreCase);
+        //        if (index >= 0)
+        //        {
+        //            Word.Range matchRange = sentenceRange.Duplicate;
+        //            matchRange.Start = sentenceRange.Start + index;
+        //            matchRange.End = matchRange.Start + inputText.Length;
+
+        //            matchRange.Text = fullForm + " ";
+        //            sel.SetRange(matchRange.End, matchRange.End);
+
+        //            // Optionally add to AutoCorrect
+        //            var autoCorrect = this.Application.AutoCorrect;
+        //            if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
+        //            {
+        //                autoCorrect.Entries.Add(inputText, fullForm);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            MessageBox.Show($"Phrase not found in sentence.\nInput = '{inputText}'\nSentence = '{sentenceText}'");
+        //        }
+        //    }
+        //    finally
+        //    {
+        //        isReplacing = false;
+        //    }
+        //}
+
+        //private void SuggestionPaneControl_OnSuggestionAccepted(string shortForm, string abbreviation)
+        //{
+        //    try
+        //    {
+        //        isReplacing = true;
+
+        //        Word.Selection sel = this.Application.Selection;
+        //        if (sel == null || sel.Range == null) return;
+
+        //        if (string.IsNullOrEmpty(abbreviation)) return;
+
+        //        Word.Range replaceRange = sel.Range.Duplicate;
+
+        //        // Go back by number of words in short form
+        //        int wordCount = shortForm.Split(' ').Length;
+        //        replaceRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+
+        //        string rangeText = replaceRange.Text?.Trim();
+
+        //        if (!string.IsNullOrEmpty(rangeText) &&
+        //            string.Equals(rangeText, shortForm, StringComparison.InvariantCultureIgnoreCase))
+        //        {
+        //            replaceRange.Text = abbreviation + " ";
+        //            sel.SetRange(replaceRange.End, replaceRange.End);
+        //        }
+        //        else
+        //        {
+        //            // fallback by character length
+        //            Word.Range fallbackRange = sel.Range.Duplicate;
+        //            fallbackRange.MoveStart(Word.WdUnits.wdCharacter, -shortForm.Length);
+        //            fallbackRange.Text = abbreviation + " ";
+        //            sel.SetRange(fallbackRange.End, fallbackRange.End);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("Replacement Error: " + ex.Message);
+        //    }
+        //    finally
+        //    {
+        //        isReplacing = false;
+        //    }
+        //}
+
+        private void SuggestionPaneControl_OnSuggestionAccepted(string shortForm, string abbreviation)
         {
-            isReplacing = true;
             try
             {
+                isReplacing = true;
+
                 Word.Selection sel = this.Application.Selection;
-                if (sel == null) return;
+                if (sel == null || sel.Range == null) return;
 
-                Word.Range sentenceRange = sel.Range.Sentences.First; // Or use Paragraphs.First
-                string sentenceText = sentenceRange.Text;
+                if (string.IsNullOrEmpty(abbreviation)) return;
 
-                // Find exact match of the input phrase in the sentence
-                int index = sentenceText.IndexOf(inputText, StringComparison.InvariantCultureIgnoreCase);
-                if (index >= 0)
+                int wordCount = shortForm.Split(' ').Length;
+
+                // Duplicate selection and move back by word count
+                Word.Range candidateRange = sel.Range.Duplicate;
+                candidateRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+
+                string candidateText = candidateRange.Text?.Trim();
+
+                // ✅ Only replace if the last words match exactly
+                if (string.Equals(candidateText, shortForm, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    Word.Range matchRange = sentenceRange.Duplicate;
-                    matchRange.Start = sentenceRange.Start + index;
-                    matchRange.End = matchRange.Start + inputText.Length;
-
-                    matchRange.Text = fullForm + " ";
-                    sel.SetRange(matchRange.End, matchRange.End);
-
-                    // Optionally add to AutoCorrect
-                    var autoCorrect = this.Application.AutoCorrect;
-                    if (!autoCorrect.Entries.Cast<Word.AutoCorrectEntry>().Any(entry => entry.Name == inputText))
-                    {
-                        autoCorrect.Entries.Add(inputText, fullForm);
-                    }
+                    candidateRange.Text = abbreviation + " ";
+                    sel.SetRange(candidateRange.End, candidateRange.End);
                 }
                 else
                 {
-                    MessageBox.Show($"Phrase not found in sentence.\nInput = '{inputText}'\nSentence = '{sentenceText}'");
+                    // ❌ Not matching, so don't replace whole phrase — fallback to replacing only current word
+                    Word.Range fallbackRange = sel.Range.Duplicate;
+                    fallbackRange.MoveStart(Word.WdUnits.wdWord, -1);
+                    fallbackRange.Text = abbreviation + " ";
+                    sel.SetRange(fallbackRange.End, fallbackRange.End);
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Replacement Error: " + ex.Message);
             }
             finally
             {
                 isReplacing = false;
             }
         }
+
+
+
+
+
+
+
 
 
 
@@ -674,7 +771,6 @@ namespace AbbreviationWordAddin
                         }
                     }
 
-                    // ❌ Prevent replacing if just undone
                     if (!string.IsNullOrEmpty(lastUndoneWord)
                         && string.Equals(candidate, lastUndoneWord, StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -698,7 +794,6 @@ namespace AbbreviationWordAddin
 
                         if (hasExact && !hasLonger)
                         {
-                            // Only replace if there are no other longer phrases starting with this word
                             if (IsLastCharSpace(sel))
                             {
                                 ReplaceWithFullForm(candidate, testRange, sel);
@@ -706,14 +801,12 @@ namespace AbbreviationWordAddin
                                 lastReplacedShortForm = candidate;
                                 lastReplacedFullForm = GetFullFormFor(candidate);
 
-                                // ✅ Clear the undo block because user accepted a new replacement
                                 lastUndoneWord = null;
                             }
                             return;
                         }
                         else if (hasExact && hasLonger)
                         {
-                            // ❗ DO NOT replace immediately — suggest instead
                             SuggestionPaneControl.SetInputText(candidate);
                             SuggestionPaneControl.ShowSuggestions(matches);
                             return;
@@ -725,9 +818,8 @@ namespace AbbreviationWordAddin
                         return;
                     }
                 }
-
-                // ✅ If no match — clear the undo word so we don’t block forever
-                lastUndoneWord = null;
+                    // ✅ If no match — clear the undo word so we don’t block forever
+                    lastUndoneWord = null;
             }
             catch (Exception ex)
             {
