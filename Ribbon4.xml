@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI onLoad="Ribbon_Load" xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+	<ribbon>
+		<tabs>
+			<tab id="tabAbbreviation" label="JSSD">
+
+				<!-- Group 1: Enable / Disable -->
+				<group id="grpEnableDisable" label="Enable / Disable">
+					<button id="btnEnable" label="Enable" onAction="btnEnable_Click" showImage="false" />
+					<button id="btnDisable" label="Disable" onAction="btnDisable_Click" showImage="false" />
+				</group>
+
+				<!-- Group 2: Replace / Highlight -->
+				<group id="grpReplaceHighlight" label="Replace / Highlight">
+					<button id="btnReplaceAll" label="Replace All" onAction="btnReplaceAll_Click" showImage="false" />
+					<button id="btnHighlightAll" label="Highlight All" onAction="btnHighlightAll_Click" showImage="false" />
+				</group>
+
+				<!-- Group 3: Other Tools -->
+				<group id="grpOtherTools" label="Other Tools">
+					<menu id="menuTemplates" label="Template" showImage="false">
+						<button id="btnGeneralFormat" onAction="btnGeneralFormat_Click" label="General Format" />
+						<button id="btnDoLetter" onAction="btnDoLetter_Click" label="DO Letter" />
+						<button id="btnNotingSheet" onAction="btnNotingSheet_Click" label="Noting Sheet" />
+						<button id="btnSignalForm" onAction="btnSignalForm_Click" label="Signal Form" />
+						<button id="btnStatementOfCase" onAction="btnStatementOfCase_Click" label="Statement of Case" />
+						<button id="btnStatementOfCaseDPM" onAction="btnStatementOfCaseDPM_Click" label="Statement of Case (DPM)" />
+						<button id="btnAppxFormat" onAction="btnAppxFormat_Click" label="Appx Format" />
+						<button id="btnServicePaper" onAction="btnServicePaper_Click" label="Service Paper" />
+						<button id="btnAgendaPts" onAction="btnAgendaPts_Click" label="Agenda Pts" />
+						<button id="btnOpNotes" onAction="btnOpNotes_Click" label="Op Notes" />
+						<button id="btnMoM" onAction="btnMoM_Click" label="MoM" />
+						<button id="btnEmailFormat" onAction="btnEmailFormat_Click" label="E-mail Format" />
+						<button id="btnTourNotes" onAction="btnTourNotes_Click" label="Tour Notes" />
+						<button id="btnAppreciation" onAction="btnAppreciation_Click" label="Appreciation" />
+						<button id="btnOpOrder" onAction="btnOpOrder_Click" label="Op Order" />
+						<button id="btnWarningOrder" onAction="btnWarningOrder_Click" label="Warning Order" />
+					</menu>
+					<button id="btnShowSuggestions" label="Show Suggestions" onAction="ShowSuggestions_Click" showImage="false" />
+				</group>
+
+			</tab>
+		</tabs>
+	</ribbon>
+</customUI>

@@ -22,8 +22,8 @@ namespace AbbreviationWordAddin
                 Globals.ThisAddIn.ToggleAbbreviationReplacement(true);
                 btnEnable.Enabled = false;  // Disable enable button
                 btnDisable.Enabled = true;  // Enable disable button
-                btnEnable.Label = "Enabled"; // Change text to indicate it's enabled
-                btnDisable.Label = "Disable"; // Reset disable button text
+                btnEnable.Label = "Enabled Abbreviations"; // Change text to indicate it's enabled
+                btnDisable.Label = "Disable Abbreviations"; // Reset disable button text
             }
             else
             {
@@ -51,8 +51,8 @@ namespace AbbreviationWordAddin
 
                 btnEnable.Enabled = false;  // Disable enable button after click
                 btnDisable.Enabled = true;  // Enable disable button
-                btnEnable.Label = "Enabled"; // Change text to indicate it's clicked
-                btnDisable.Label = "Disable"; // Reset disable button text
+                btnEnable.Label = "Enabled Abbreviations"; // Change text to indicate it's clicked
+                btnDisable.Label = "Disable Abbreviations"; // Reset disable button text
 
                 autoCorrect.ReplaceText = true; // Enable text replacement
                 autoCorrect.CorrectCapsLock = true; 
@@ -83,8 +83,8 @@ namespace AbbreviationWordAddin
 
                 btnEnable.Enabled = true;  // Enable enable button
                 btnDisable.Enabled = false; // Disable disable button
-                btnDisable.Label = "Disabled"; // Change text to indicate it's clicked
-                btnEnable.Label = "Enable"; // Reset enable button text
+                btnDisable.Label = "Disabled Abbreviations"; // Change text to indicate it's clicked
+                btnEnable.Label = "Enable Abbreviations"; // Reset enable button text
 
                 // Disable various AutoCorrect features
                 autoCorrect.ReplaceText = false;
@@ -151,6 +151,14 @@ namespace AbbreviationWordAddin
             {
                 button.Label = "Highlight All";  // Reset label
                 button.Enabled = true;  // Re-enable the button
+            }
+        }
+
+        private void ShowSuggestions_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (Globals.ThisAddIn.suggestionTaskPane != null)
+            {
+                Globals.ThisAddIn.suggestionTaskPane.Visible = true;
             }
         }
     }

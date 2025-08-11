@@ -343,6 +343,18 @@
   <ItemGroup>
     <EmbeddedResource Include="Ribbon.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Ribbon1.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Ribbon2.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Ribbon3.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Ribbon4.xml" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

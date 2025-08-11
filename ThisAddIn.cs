@@ -21,7 +21,7 @@ namespace AbbreviationWordAddin
         private const int CHUNK_SIZE = 1000;
         string lastLoadedVersion = Properties.Settings.Default.LastLoadedAbbreviationVersion;
         string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
-        private Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
+        public Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
         private int maxPhraseLength = 12;
         private bool isReplacing = false;
         private bool isAbbreviationEnabled = true;
@@ -103,6 +103,7 @@ namespace AbbreviationWordAddin
                 suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
                 SuggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
                 SuggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
+                suggestionTaskPane.Width = 500;
                 suggestionTaskPane.Visible = true;
 
                 typingTimer = new Timer { Interval = 300 };

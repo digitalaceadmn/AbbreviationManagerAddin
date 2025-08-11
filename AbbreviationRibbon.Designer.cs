@@ -60,8 +60,10 @@ namespace AbbreviationWordAddin
             this.group2 = this.Factory.CreateRibbonGroup();
             this.btnEnable = this.Factory.CreateRibbonButton();
             this.btnDisable = this.Factory.CreateRibbonButton();
+            this.group1 = this.Factory.CreateRibbonGroup();
             this.btnReplaceAll = this.Factory.CreateRibbonButton();
             this.btnHighlightAll = this.Factory.CreateRibbonButton();
+            this.group3 = this.Factory.CreateRibbonGroup();
             this.menuTemplates = this.Factory.CreateRibbonMenu();
             this.btnGeneralFormat = this.Factory.CreateRibbonButton();
             this.btnDoLetter = this.Factory.CreateRibbonButton();
@@ -75,9 +77,17 @@ namespace AbbreviationWordAddin
             this.btnOpNotes = this.Factory.CreateRibbonButton();
             this.btnMoM = this.Factory.CreateRibbonButton();
             this.btnEmailFormat = this.Factory.CreateRibbonButton();
+            this.btnTourNotes = this.Factory.CreateRibbonButton();
+            this.btnAppreciation = this.Factory.CreateRibbonButton();
+            this.btnOpOrder = this.Factory.CreateRibbonButton();
+            this.btnWarningOrder = this.Factory.CreateRibbonButton();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.btnCaseStudy = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.AppxC.SuspendLayout();
             this.group2.SuspendLayout();
+            this.group1.SuspendLayout();
+            this.group3.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -89,6 +99,8 @@ namespace AbbreviationWordAddin
             // AppxC
             // 
             this.AppxC.Groups.Add(this.group2);
+            this.AppxC.Groups.Add(this.group1);
+            this.AppxC.Groups.Add(this.group3);
             this.AppxC.Label = "JSSD";
             this.AppxC.Name = "AppxC";
             // 
@@ -96,10 +108,6 @@ namespace AbbreviationWordAddin
             // 
             this.group2.Items.Add(this.btnEnable);
             this.group2.Items.Add(this.btnDisable);
-            this.group2.Items.Add(this.btnReplaceAll);
-            this.group2.Items.Add(this.btnHighlightAll);
-            this.group2.Items.Add(this.menuTemplates);
-            this.group2.Label = "Abbreviation Tools";
             this.group2.Name = "group2";
             // 
             // btnEnable
@@ -114,6 +122,12 @@ namespace AbbreviationWordAddin
             this.btnDisable.Name = "btnDisable";
             this.btnDisable.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDisable_Click);
             // 
+            // group1
+            // 
+            this.group1.Items.Add(this.btnReplaceAll);
+            this.group1.Items.Add(this.btnHighlightAll);
+            this.group1.Name = "group1";
+            // 
             // btnReplaceAll
             // 
             this.btnReplaceAll.Label = "Replace All";
@@ -125,6 +139,12 @@ namespace AbbreviationWordAddin
             this.btnHighlightAll.Label = "Highlight All";
             this.btnHighlightAll.Name = "btnHighlightAll";
             this.btnHighlightAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnHighlightAll_Click);
+            // 
+            // group3
+            // 
+            this.group3.Items.Add(this.menuTemplates);
+            this.group3.Items.Add(this.button1);
+            this.group3.Name = "group3";
             // 
             // menuTemplates
             // 
@@ -140,6 +160,10 @@ namespace AbbreviationWordAddin
             this.menuTemplates.Items.Add(this.btnOpNotes);
             this.menuTemplates.Items.Add(this.btnMoM);
             this.menuTemplates.Items.Add(this.btnEmailFormat);
+            this.menuTemplates.Items.Add(this.btnTourNotes);
+            this.menuTemplates.Items.Add(this.btnAppreciation);
+            this.menuTemplates.Items.Add(this.btnOpOrder);
+            this.menuTemplates.Items.Add(this.btnWarningOrder);
             this.menuTemplates.Label = "Template";
             this.menuTemplates.Name = "menuTemplates";
             // 
@@ -229,43 +253,44 @@ namespace AbbreviationWordAddin
             // 
             // btnTourNotes
             // 
-            this.btnEmailFormat.Label = "Tour notes";
-            this.btnEmailFormat.Name = "btnTourNotes";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTourNotes_Click);
-
+            this.btnTourNotes.Label = "Tour Notes";
+            this.btnTourNotes.Name = "btnTourNotes";
+            this.btnTourNotes.ShowImage = true;
+            this.btnTourNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTourNotes_Click);
             // 
             // btnAppreciation
             // 
-            this.btnEmailFormat.Label = "Appreciation";
-            this.btnEmailFormat.Name = "btnAppreciation";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppreciation_Click);
-
-            // 
-            // btnCaseStudy
-            // 
-            this.btnEmailFormat.Label = "Case Study";
-            this.btnEmailFormat.Name = "btnCaseStudy";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
-
+            this.btnAppreciation.Label = "Appreciation";
+            this.btnAppreciation.Name = "btnAppreciation";
+            this.btnAppreciation.ShowImage = true;
+            this.btnAppreciation.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppreciation_Click);
             // 
             // btnOpOrder
             // 
-            this.btnEmailFormat.Label = "Op Order";
-            this.btnEmailFormat.Name = "btnOpOrder";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpOrder_Click);
-
+            this.btnOpOrder.Label = "Op Order";
+            this.btnOpOrder.Name = "btnOpOrder";
+            this.btnOpOrder.ShowImage = true;
+            this.btnOpOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpOrder_Click);
             // 
             // btnWarningOrder
             // 
-            this.btnEmailFormat.Label = "Warning Order";
-            this.btnEmailFormat.Name = "btnWarningOrder";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
-
+            this.btnWarningOrder.Label = "Warning Order";
+            this.btnWarningOrder.Name = "btnWarningOrder";
+            this.btnWarningOrder.ShowImage = true;
+            this.btnWarningOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
+            // 
+            // button1
+            // 
+            this.button1.Label = "Show Suggestions";
+            this.button1.Name = "button1";
+            this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ShowSuggestions_Click);
+            // 
+            // btnCaseStudy
+            // 
+            this.btnCaseStudy.Label = "Case Study";
+            this.btnCaseStudy.Name = "btnCaseStudy";
+            this.btnCaseStudy.ShowImage = true;
+            this.btnCaseStudy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
             // 
             // AbbreviationRibbon
             // 
@@ -280,6 +305,10 @@ namespace AbbreviationWordAddin
             this.AppxC.PerformLayout();
             this.group2.ResumeLayout(false);
             this.group2.PerformLayout();
+            this.group1.ResumeLayout(false);
+            this.group1.PerformLayout();
+            this.group3.ResumeLayout(false);
+            this.group3.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -463,6 +492,14 @@ namespace AbbreviationWordAddin
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnOpNotes;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMoM;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnEmailFormat;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnTourNotes;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAppreciation;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnCaseStudy;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnOpOrder;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnWarningOrder;
+        internal RibbonButton button1;
+        internal RibbonGroup group1;
+        internal RibbonGroup group3;
     }
 
     partial class ThisRibbonCollection

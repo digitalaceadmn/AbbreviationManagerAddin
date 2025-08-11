@@ -46,7 +46,7 @@
             this.listBoxSuggestions.MultiSelect = false;
 
             // Add a column so scrollbars can appear
-            this.listBoxSuggestions.Columns.Add("Word/Phrase", 360);
+            this.listBoxSuggestions.Columns.Add("Word/Phrase", 260);
 
             this.listBoxSuggestions.SelectedIndexChanged += new System.EventHandler(this.listBoxSuggestions_SelectedIndexChanged);
             // 

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI onLoad="Ribbon_Load" xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+    <ribbon>
+        <tabs>
+            <tab idMso="TabAddIns" />
+            <tab id="AppxC" label="JSSD">
+                <group id="group2" label="Abbreviation Tools">
+                    <button id="btnEnable" onAction="btnEnable_Click" label="Enable Abbreviation" showImage="false" />
+                    <button id="btnDisable" onAction="btnDisable_Click" label="Disable Abbreviation" showImage="false" />
+                    <button id="btnReplaceAll" onAction="btnReplaceAll_Click" label="Replace All" showImage="false" />
+                    <button id="btnHighlightAll" onAction="btnHighlightAll_Click" label="Highlight All" showImage="false" />
+                    <menu id="menuTemplates" label="Template" showImage="false">
+                        <button id="btnGeneralFormat" onAction="btnGeneralFormat_Click" label="General Format" />
+                        <button id="btnDoLetter" onAction="btnDoLetter_Click" label="DO Letter" />
+                        <button id="btnNotingSheet" onAction="btnNotingSheet_Click" label="Noting Sheet" />
+                        <button id="btnSignalForm" onAction="btnSignalForm_Click" label="Signal Form" />
+                        <button id="btnStatementOfCase" onAction="btnStatementOfCase_Click" label="Statement of Case" />
+                        <button id="btnStatementOfCaseDPM" onAction="btnStatementOfCaseDPM_Click" label="Statement of Case (DPM)" />
+                        <button id="btnAppxFormat" onAction="btnAppxFormat_Click" label="Appx Format" />
+                        <button id="btnServicePaper" onAction="btnServicePaper_Click" label="Service Paper" />
+                        <button id="btnAgendaPts" onAction="btnAgendaPts_Click" label="Agenda Pts" />
+                        <button id="btnOpNotes" onAction="btnOpNotes_Click" label="Op Notes" />
+                        <button id="btnMoM" onAction="btnMoM_Click" label="MoM" />
+                        <button id="btnEmailFormat" onAction="btnWarningOrder_Click" label="Warning Order" />
+                    </menu>
+                    <button id="button1" onAction="ShowSuggestions_Click" label="Show Suggestions" showImage="false" />
+                </group>
+            </tab>
+        </tabs>
+    </ribbon>
+</customUI>
