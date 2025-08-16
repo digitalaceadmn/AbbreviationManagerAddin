@@ -43,7 +43,10 @@ namespace AbbreviationWordAddin
         private string lastWord = "";
         private Timer typingTimer;
         internal SuggestionPaneControl SuggestionPaneControl;
-
+        bool replaceAllChosen = false;
+        bool ignoreAllChosen = false;
+        private bool replaceAllForPhrase;
+        private bool ignoreAllForPhrase;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -274,6 +277,7 @@ namespace AbbreviationWordAddin
 
         public void ReplaceAllAbbreviations()
         {
+            if (!isAbbreviationEnabled) return;
             var progressForm = new ProgressForm();
 
             var syncContext = System.Threading.SynchronizationContext.Current;
@@ -343,37 +347,99 @@ namespace AbbreviationWordAddin
                                         string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
                                             ?? AbbreviationManager.GetAbbreviation(phrase);
 
-                                        if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
+
+                                        Word.Find find = doc.Content.Find;
+                                        find.ClearFormatting();
+                                        find.Text = phrase;
+                                        find.MatchCase = false;
+                                        find.MatchWholeWord = true;
+                                        find.Wrap = Word.WdFindWrap.wdFindStop;
+
+                                        
+
+                                        while (find.Execute())
                                         {
-                                            var find = chunkRange.Find;
-                                            find.ClearFormatting();
-                                            find.Text = phrase;
-                                            find.Forward = true;
-                                            find.Format = false;
-                                            find.MatchCase = false;
-                                            find.MatchWholeWord = true;
-                                            find.MatchWildcards = false;
-                                            find.MatchSoundsLike = false;
-                                            find.MatchAllWordForms = false;
-                                            find.Wrap = Word.WdFindWrap.wdFindContinue;
+                                            Word.Range matchRange = find.Parent as Word.Range;
+                                            if (matchRange == null) break;
 
-                                            find.Replacement.ClearFormatting();
-                                            find.Replacement.Text = replacement;
+                                            if (replaceAllForPhrase)
+                                            {
+                                                if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
+                                                {
+                                                    var findW = chunkRange.Find;
+                                                    findW.ClearFormatting();
+                                                    findW.Text = phrase;
+                                                    findW.Forward = true;
+                                                    findW.Format = false;
+                                                    findW.MatchCase = false;
+                                                    findW.MatchWholeWord = true;
+                                                    findW.MatchWildcards = false;
+                                                    findW.MatchSoundsLike = false;
+                                                    findW.MatchAllWordForms = false;
+                                                    findW.Wrap = Word.WdFindWrap.wdFindContinue;
 
-                                            find.Execute(
-                                                FindText: phrase,
-                                                MatchCase: false,
-                                                MatchWholeWord: true,
-                                                MatchWildcards: false,
-                                                MatchSoundsLike: false,
-                                                MatchAllWordForms: false,
-                                                Forward: true,
-                                                Wrap: Word.WdFindWrap.wdFindContinue,
-                                                Format: false,
-                                                ReplaceWith: replacement,
-                                                Replace: Word.WdReplace.wdReplaceAll
-                                            );
+                                                    findW.Replacement.ClearFormatting();
+                                                    findW.Replacement.Text = replacement;
+
+                                                    findW.Execute(
+                                                        FindText: phrase,
+                                                        MatchCase: false,
+                                                        MatchWholeWord: true,
+                                                        MatchWildcards: false,
+                                                        MatchSoundsLike: false,
+                                                        MatchAllWordForms: false,
+                                                        Forward: true,
+                                                        Wrap: Word.WdFindWrap.wdFindContinue,
+                                                        Format: false,
+                                                        ReplaceWith: replacement,
+                                                        Replace: Word.WdReplace.wdReplaceAll
+                                                    );
+                                                }
+                                                continue;
+                                            }
+                                            if (ignoreAllForPhrase)
+                                            {
+                                                continue;
+                                            }
+
+                                            using (var dlg = new ReplaceDialog(phrase, replacement))
+                                            {
+                                                var result = dlg.ShowDialog();
+                                                if (result == DialogResult.OK)
+                                                {
+                                                    switch (dlg.UserChoice)
+                                                    {
+                                                        case ReplaceDialog.ReplaceAction.Replace:
+                                                            matchRange.Text = replacement;
+                                                            break;
+
+                                                        case ReplaceDialog.ReplaceAction.ReplaceAll:
+                                                            matchRange.Text = replacement;
+                                                            replaceAllForPhrase = true; // future occurrences replaced automatically
+                                                            break;
+
+                                                        case ReplaceDialog.ReplaceAction.Ignore:
+                                                            // skip this one
+                                                            break;
+
+                                                        case ReplaceDialog.ReplaceAction.IgnoreAll:
+                                                            ignoreAllForPhrase = true; // future occurrences skipped automatically
+                                                            break;
+
+                                                        case ReplaceDialog.ReplaceAction.Cancel:
+                                                        case ReplaceDialog.ReplaceAction.Close:
+                                                            return; // stop everything
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    return; // user closed dialog abruptly → stop everything
+                                                }
+                                            }
                                         }
+
+
+                                        
                                     }
                                 }
 
@@ -414,6 +480,7 @@ namespace AbbreviationWordAddin
 
         public void HighlightAllAbbreviations()
         {
+            if (!isAbbreviationEnabled) return;
             var progressForm = new ProgressForm();
             var syncContext = System.Threading.SynchronizationContext.Current;
             bool completed = false;
@@ -667,46 +734,47 @@ namespace AbbreviationWordAddin
 
         private void SuggestionPaneControl_OnSuggestionAccepted(string shortForm, string abbreviation)
         {
-            try
-            {
-                isReplacing = true;
+            return;
+            //try
+            //{
+            //    isReplacing = true;
 
-                Word.Selection sel = this.Application.Selection;
-                if (sel == null || sel.Range == null) return;
+            //    Word.Selection sel = this.Application.Selection;
+            //    if (sel == null || sel.Range == null) return;
 
-                if (string.IsNullOrEmpty(abbreviation)) return;
+            //    if (string.IsNullOrEmpty(abbreviation)) return;
 
-                int wordCount = shortForm.Split(' ').Length;
+            //    int wordCount = shortForm.Split(' ').Length;
 
-                // Duplicate selection and move back by word count
-                Word.Range candidateRange = sel.Range.Duplicate;
-                candidateRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
+            //    // Duplicate selection and move back by word count
+            //    Word.Range candidateRange = sel.Range.Duplicate;
+            //    candidateRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
 
-                string candidateText = candidateRange.Text?.Trim();
+            //    string candidateText = candidateRange.Text?.Trim();
 
-                // ✅ Only replace if the last words match exactly
-                if (string.Equals(candidateText, shortForm, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    candidateRange.Text = abbreviation + " ";
-                    sel.SetRange(candidateRange.End, candidateRange.End);
-                }
-                else
-                {
-                    // ❌ Not matching, so don't replace whole phrase — fallback to replacing only current word
-                    Word.Range fallbackRange = sel.Range.Duplicate;
-                    fallbackRange.MoveStart(Word.WdUnits.wdWord, -1);
-                    fallbackRange.Text = abbreviation + " ";
-                    sel.SetRange(fallbackRange.End, fallbackRange.End);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Replacement Error: " + ex.Message);
-            }
-            finally
-            {
-                isReplacing = false;
-            }
+            //    // ✅ Only replace if the last words match exactly
+            //    if (string.Equals(candidateText, shortForm, StringComparison.InvariantCultureIgnoreCase))
+            //    {
+            //        candidateRange.Text = abbreviation + " ";
+            //        sel.SetRange(candidateRange.End, candidateRange.End);
+            //    }
+            //    else
+            //    {
+            //        // ❌ Not matching, so don't replace whole phrase — fallback to replacing only current word
+            //        Word.Range fallbackRange = sel.Range.Duplicate;
+            //        fallbackRange.MoveStart(Word.WdUnits.wdWord, -1);
+            //        fallbackRange.Text = abbreviation + " ";
+            //        sel.SetRange(fallbackRange.End, fallbackRange.End);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine("Replacement Error: " + ex.Message);
+            //}
+            //finally
+            //{
+            //    isReplacing = false;
+            //}
         }
 
 

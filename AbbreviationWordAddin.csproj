@@ -305,12 +305,21 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="ReplaceDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReplaceDialog.Designer.cs">
+      <DependentUpon>ReplaceDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Ribbon.cs">
       <XmlRibbon>true</XmlRibbon>
     </Compile>
     <Compile Include="ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
+    <EmbeddedResource Include="ReplaceDialog.resx">
+      <DependentUpon>ReplaceDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SuggestionPaneControl.resx">
       <DependentUpon>SuggestionPaneControl.cs</DependentUpon>
     </EmbeddedResource>
@@ -326,6 +335,11 @@
     <EmbeddedResource Include="Templates\Signal Form.docx" />
     <EmbeddedResource Include="Templates\Statement of Case %28DPM%29.docx" />
     <EmbeddedResource Include="Templates\Statement of Case.docx" />
+    <None Include="Templates\Appreciation.docx" />
+    <None Include="Templates\Case Study.docx" />
+    <None Include="Templates\Op order.docx" />
+    <None Include="Templates\Tour Notes.docx" />
+    <None Include="Templates\Warning Order.docx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>

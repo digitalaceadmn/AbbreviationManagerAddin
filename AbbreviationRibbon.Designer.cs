@@ -407,7 +407,7 @@ namespace AbbreviationWordAddin
 
         private void btnOpOrder_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op Order.docx", "Op Order.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op order.docx", "Op order.docx");
             InsertTemplate(templatePath);
         }
 
@@ -433,7 +433,7 @@ namespace AbbreviationWordAddin
             return fullPath;
         }
 
-       
+
 
         private void InsertTemplate(string templatePath)
         {
@@ -452,14 +452,15 @@ namespace AbbreviationWordAddin
 
                 tempDoc.Close(false);
 
-                System.Threading.Thread.Sleep(200); // <-- critical in some environments
+                System.Threading.Thread.Sleep(200); 
 
                 var currentDoc = Globals.ThisAddIn.Application.ActiveDocument;
                 currentDoc.Activate();
 
                 Globals.ThisAddIn.Application.Selection.HomeKey(WdUnits.wdStory);
-
                 Globals.ThisAddIn.Application.Selection.Paste();
+
+                Globals.ThisAddIn.Application.Selection.HomeKey(WdUnits.wdStory);
 
                 MessageBox.Show("Template inserted successfully!");
             }
@@ -468,6 +469,7 @@ namespace AbbreviationWordAddin
                 MessageBox.Show("Error inserting template: " + ex.Message);
             }
         }
+
 
 
         #endregion
