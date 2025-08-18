@@ -24,7 +24,7 @@ namespace AbbreviationWordAddin
         public Microsoft.Office.Tools.CustomTaskPane suggestionTaskPane;
         private int maxPhraseLength = 12;
         private bool isReplacing = false;
-        private bool isAbbreviationEnabled = true;
+        public bool isAbbreviationEnabled = true;
         private bool frozeSuggestions = false;
 
         private string lastReplacedShortForm = "";
@@ -274,6 +274,230 @@ namespace AbbreviationWordAddin
                 
         }
 
+        public void ReplaceAllDirectAbbreviations()
+        {
+            var progressForm = new ProgressForm();
+            var syncContext = System.Threading.SynchronizationContext.Current;
+            
+
+
+            bool completed = false;
+            Exception processError = null;
+
+            var progressThread = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    Word.Document doc = null;
+                    syncContext.Send(_ =>
+                    {
+                        doc = this.Application.ActiveDocument;
+
+                        // 🚫 Disable UI flicker
+                        this.Application.ScreenUpdating = false;
+                        this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
+                        this.Application.ShowAnimation = false;
+                        this.Application.DisplayStatusBar = false;
+                        this.Application.Options.ReplaceSelection = false;
+                    }, null);
+
+                    if (reloadAbbrDataFromDict)
+                    {
+                        syncContext.Send(_ =>
+                        {
+                            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+                        }, null);
+                    }
+
+                    var phrases = AbbreviationManager.GetAllPhrases();
+                    int total = phrases.Count;
+                    int processed = 0;
+
+                    foreach (var phrase in phrases)
+                    {
+                        processed++;
+                        int percent = (processed * 100) / total;
+                        progressForm.UpdateProgress(percent, $"Replacing '{phrase}' ({processed}/{total})...");
+
+                        string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                                           ?? AbbreviationManager.GetAbbreviation(phrase);
+
+                        syncContext.Send(_ =>
+                        {
+                            try
+                            {
+                                Word.Find find = doc.Content.Find;
+                                find.ClearFormatting();
+                                find.Text = phrase;
+                                find.MatchCase = false;
+                                find.MatchWholeWord = true;
+                                find.MatchWildcards = false;
+                                find.Replacement.ClearFormatting();
+                                find.Replacement.Text = replacement;
+
+                                // 🚀 One-shot ReplaceAll
+                                find.Execute(
+                                    Replace: Word.WdReplace.wdReplaceAll,
+                                    Forward: true,
+                                    Wrap: Word.WdFindWrap.wdFindContinue
+                                );
+
+                                // Log to Form1 (caret hidden)
+                            }
+                            catch (Exception ex)
+                            {
+                                processError = ex;
+                                completed = true;
+                            }
+                        }, null);
+
+                        if (completed) break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    processError = ex;
+                }
+                finally
+                {
+                    syncContext.Send(_ =>
+                    {
+                        // ✅ Restore UI
+                        this.Application.ScreenUpdating = true;
+                        this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
+                        this.Application.ShowAnimation = true;
+                        this.Application.DisplayStatusBar = true;
+                        this.Application.Options.ReplaceSelection = true;
+                    }, null);
+
+                    completed = true;
+                    syncContext.Post(_ => progressForm.Close(), null);
+                }
+            });
+
+            progressThread.Start();
+            progressForm.ShowDialog();
+
+            if (processError != null)
+            {
+                throw processError;
+            }
+        }
+
+        public void ReplaceAllReverseAbbreviations()
+        {
+            if (!isAbbreviationEnabled) return;
+            var progressForm = new ProgressForm();
+
+            var syncContext = System.Threading.SynchronizationContext.Current;
+            bool completed = false;
+            Exception processError = null;
+
+            var progressThread = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    Word.Document doc = null;
+                    syncContext.Send(_ =>
+                    {
+                        doc = this.Application.ActiveDocument;
+                        this.Application.ScreenUpdating = false;
+                        this.Application.DisplayStatusBar = false;
+                        this.Application.Options.ReplaceSelection = false;
+                    }, null);
+
+                    if (reloadAbbrDataFromDict)
+                    {
+                        syncContext.Send(_ =>
+                        {
+                            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+                        }, null);
+                    }
+
+                    // ✅ Build reverse dictionary (Replacement -> Phrase)
+                    var phrases = AbbreviationManager.GetAllPhrases();
+                    var reverseMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var phrase in phrases)
+                    {
+                        string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                                             ?? AbbreviationManager.GetAbbreviation(phrase);
+
+                        if (!string.IsNullOrWhiteSpace(replacement) &&
+                            !reverseMap.ContainsKey(replacement))
+                        {
+                            reverseMap[replacement] = phrase; // reverse mapping
+                        }
+                    }
+
+                    int total = reverseMap.Count;
+                    int processed = 0;
+
+                    foreach (var kvp in reverseMap)
+                    {
+                        processed++;
+                        int percent = (processed * 100) / total;
+                        progressForm.UpdateProgress(percent, $"Reversing '{kvp.Key}' → '{kvp.Value}' ({processed}/{total})...");
+
+                        syncContext.Send(_ =>
+                        {
+                            try
+                            {
+                                Word.Find find = doc.Content.Find;
+                                find.ClearFormatting();
+                                find.Text = kvp.Key;  // search replacement
+                                find.MatchCase = false;
+                                find.MatchWholeWord = true;
+                                find.MatchWildcards = false;
+
+                                find.Replacement.ClearFormatting();
+                                find.Replacement.Text = kvp.Value; // replace with original phrase
+
+                                // 🚀 ReplaceAll in one go
+                                find.Execute(
+                                    Replace: Word.WdReplace.wdReplaceAll,
+                                    Forward: true,
+                                    Wrap: Word.WdFindWrap.wdFindContinue
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                processError = ex;
+                                completed = true;
+                            }
+                        }, null);
+
+                        if (completed) break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    processError = ex;
+                }
+                finally
+                {
+                    syncContext.Send(_ =>
+                    {
+                        this.Application.ScreenUpdating = true;
+                        this.Application.DisplayStatusBar = true;
+                        this.Application.Options.ReplaceSelection = true;
+                    }, null);
+
+                    completed = true;
+                    syncContext.Post(_ => progressForm.Close(), null);
+                }
+            });
+
+            progressThread.Start();
+            progressForm.ShowDialog();
+
+            if (processError != null)
+            {
+                throw processError;
+            }
+        }
+
+
 
         public void ReplaceAllAbbreviations()
         {
@@ -307,7 +531,7 @@ namespace AbbreviationWordAddin
 
                     int totalWords = 0;
                     syncContext.Send(_ =>
-                    {
+                    { 
                         totalWords = doc.Words.Count;
                     }, null);
 
@@ -362,41 +586,7 @@ namespace AbbreviationWordAddin
                                             Word.Range matchRange = find.Parent as Word.Range;
                                             if (matchRange == null) break;
 
-                                            if (replaceAllForPhrase)
-                                            {
-                                                if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
-                                                {
-                                                    var findW = chunkRange.Find;
-                                                    findW.ClearFormatting();
-                                                    findW.Text = phrase;
-                                                    findW.Forward = true;
-                                                    findW.Format = false;
-                                                    findW.MatchCase = false;
-                                                    findW.MatchWholeWord = true;
-                                                    findW.MatchWildcards = false;
-                                                    findW.MatchSoundsLike = false;
-                                                    findW.MatchAllWordForms = false;
-                                                    findW.Wrap = Word.WdFindWrap.wdFindContinue;
-
-                                                    findW.Replacement.ClearFormatting();
-                                                    findW.Replacement.Text = replacement;
-
-                                                    findW.Execute(
-                                                        FindText: phrase,
-                                                        MatchCase: false,
-                                                        MatchWholeWord: true,
-                                                        MatchWildcards: false,
-                                                        MatchSoundsLike: false,
-                                                        MatchAllWordForms: false,
-                                                        Forward: true,
-                                                        Wrap: Word.WdFindWrap.wdFindContinue,
-                                                        Format: false,
-                                                        ReplaceWith: replacement,
-                                                        Replace: Word.WdReplace.wdReplaceAll
-                                                    );
-                                                }
-                                                continue;
-                                            }
+                                            
                                             if (ignoreAllForPhrase)
                                             {
                                                 continue;
@@ -415,8 +605,8 @@ namespace AbbreviationWordAddin
 
                                                         case ReplaceDialog.ReplaceAction.ReplaceAll:
                                                             matchRange.Text = replacement;
-                                                            replaceAllForPhrase = true; // future occurrences replaced automatically
-                                                            break;
+                                                            ReplaceAllDirectAbbreviations();
+                                                            return;
 
                                                         case ReplaceDialog.ReplaceAction.Ignore:
                                                             // skip this one

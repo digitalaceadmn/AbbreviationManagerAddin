@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Word;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AbbreviationWordAddin
@@ -15,55 +17,89 @@ namespace AbbreviationWordAddin
         {
             InitializeComponent();
 
-            // TextBox handler
-            this.textBoxInput.TextChanged += textBoxInput_TextChanged;
+            tabControlModes.SelectedIndexChanged += TabControlModes_SelectedIndexChanged;
 
-            // Setup ListView
-            this.listBoxSuggestions.View = View.Details;
-            this.listBoxSuggestions.FullRowSelect = true;
-            this.listBoxSuggestions.Columns.Add("Replacement", 200);
-
-            this.listBoxSuggestions.DoubleClick += listBoxSuggestions_DoubleClick;
-            this.listBoxSuggestions.MouseEnter += listBoxSuggestions_MouseEnter;
-            this.listBoxSuggestions.MouseLeave += listBoxSuggestions_MouseLeave;
-        }
-
-        private void textBoxInput_TextChanged(object sender, EventArgs e)
-        {
-            OnTextChanged?.Invoke(textBoxInput.Text);
-        }
-
-        private void listBoxSuggestions_DoubleClick(object sender, EventArgs e)
-        {
-            if (listBoxSuggestions.SelectedItems.Count > 0)
+            // --- Setup Tab 1 (Abbreviations) ---
+            this.textBoxInput.TextChanged += (s, e) =>
             {
-                var selected = listBoxSuggestions.SelectedItems[0];
-                //string word = selected.SubItems[0].Text;
-                //string replacement = selected.SubItems[1].Text;
+                if (tabControlModes.SelectedTab == tabPageAbbreviation)
+                    OnTextChanged?.Invoke(textBoxInput.Text);
+            };
+            this.listViewAbbrev.View = System.Windows.Forms.View.Details;
+            this.listViewAbbrev.FullRowSelect = true;
+            this.listViewAbbrev.Columns.Add("Word/Phrase", 120);
+            this.listViewAbbrev.Columns.Add("Replacement", 200);
+            this.listViewAbbrev.DoubleClick += ListView_DoubleClick;
+            this.listViewAbbrev.MouseEnter += (s, e) => isSuggestionListFrozen = true;
+            this.listViewAbbrev.MouseLeave += (s, e) => isSuggestionListFrozen = false;
 
+            // --- Setup Tab 2 (Reverse Abbreviations) ---
+            this.textBoxInput.TextChanged += (s, e) =>
+            {
+                if (tabControlModes.SelectedTab == tabPageReverse)
+                    OnTextChanged?.Invoke(textBoxInput.Text);
+            };
+            this.listViewReverse.View = System.Windows.Forms.View.Details;
+            this.listViewReverse.FullRowSelect = true;
+            this.listViewReverse.Columns.Add("Replacement", 200);
+            this.listViewReverse.Columns.Add("Word/Phrase", 120);
+            this.listViewReverse.DoubleClick += ListView_DoubleClick;
+            this.listViewReverse.MouseEnter += (s, e) => isSuggestionListFrozen = true;
+            this.listViewReverse.MouseLeave += (s, e) => isSuggestionListFrozen = false;
 
-                string shortForm = selected.SubItems[0].Text;  // "accounting unit"
-                string fullForm = selected.SubItems[1].Text;  // "au"
+            // --- Setup Tab 3 (Dictionary) ---
+            this.listViewDictionary.View = System.Windows.Forms.View.Details;
+            this.listViewDictionary.FullRowSelect = true;
+            this.listViewDictionary.Columns.Add("Word/Phrase", 320);
+            this.listViewDictionary.Columns.Add("Replacement", 200);
+        }
 
-                //MessageBox.Show($"You selected: {shortForm} → {fullForm}");
+        // --- Tab handling ---
+        public enum Mode
+        {
+            Abbreviation,
+            Reverse,
+            Dictionary
+        }
 
-
-                OnSuggestionAccepted?.Invoke(shortForm, fullForm);
-
-                //OnSuggestionAccepted?.Invoke(word, replacement);
+        public Mode CurrentMode
+        {
+            get
+            {
+                if (tabControlModes.SelectedTab == tabPageAbbreviation)
+                    return Mode.Abbreviation;
+                if (tabControlModes.SelectedTab == tabPageReverse)
+                    return Mode.Reverse;
+                return Mode.Dictionary;
             }
         }
 
-        private void listBoxSuggestions_MouseEnter(object sender, EventArgs e)
+        // --- Double click suggestion accept ---
+        private void ListView_DoubleClick(object sender, EventArgs e)
         {
-            isSuggestionListFrozen = true;
+            var lv = sender as ListView;
+            if (lv == null || lv.SelectedItems.Count == 0) return;
+
+            var selected = lv.SelectedItems[0];
+            string shortForm, fullForm;
+
+            if (CurrentMode == Mode.Reverse)
+            {
+                fullForm = selected.SubItems[0].Text;   // full form
+                shortForm = selected.SubItems[1].Text;  // abbreviation
+            }
+            else
+            {
+                shortForm = selected.SubItems[0].Text;  // abbreviation
+                fullForm = selected.SubItems[1].Text;   // full form
+            }
+
+            OnSuggestionAccepted?.Invoke(shortForm, fullForm);
         }
 
-        private void listBoxSuggestions_MouseLeave(object sender, EventArgs e)
-        {
-            isSuggestionListFrozen = false;
-        }
-
+        // --- Show suggestions in the right tab ---
+        private List<(string Word, string Replacement)> lastSuggestions =
+     new List<(string Word, string Replacement)>();
 
         public void ShowSuggestions(List<(string Word, string Replacement)> suggestions)
         {
@@ -73,23 +109,97 @@ namespace AbbreviationWordAddin
                 return;
             }
 
-            listBoxSuggestions.Items.Clear();
-            foreach (var suggestion in suggestions)
+            // ✅ Skip refresh if suggestions are identical
+            if (lastSuggestions.Count == suggestions.Count &&
+                !lastSuggestions.Except(suggestions).Any())
             {
-                var item = new ListViewItem(suggestion.Word);
-                item.SubItems.Add(suggestion.Replacement);
-                listBoxSuggestions.Items.Add(item);
+                return;
+            }
+
+            lastSuggestions = suggestions;
+
+            if (CurrentMode == Mode.Abbreviation)
+            {
+                listViewAbbrev.BeginUpdate(); // avoid flicker
+                listViewAbbrev.Items.Clear();
+                foreach (var suggestion in suggestions)
+                {
+                    var item = new ListViewItem(suggestion.Word);
+                    item.SubItems.Add(suggestion.Replacement);
+                    listViewAbbrev.Items.Add(item);
+                }
+                listViewAbbrev.EndUpdate();
+            }
+            else if (CurrentMode == Mode.Reverse)
+            {
+                listViewReverse.BeginUpdate(); // avoid flicker
+                listViewReverse.Items.Clear();
+                foreach (var suggestion in suggestions)
+                {
+                    var item = new ListViewItem(suggestion.Replacement);
+                    item.SubItems.Add(suggestion.Word);
+                    listViewReverse.Items.Add(item);
+                }
+                listViewReverse.EndUpdate();
             }
         }
 
+
+        // --- Set input text depending on tab ---
         public void SetInputText(string text)
         {
-            textBoxInput.Text = text;
+            if (CurrentMode == Mode.Abbreviation)
+                textBoxInput.Text = text;
+            else if (CurrentMode == Mode.Reverse)
+                textBoxInput.Text = text;
         }
 
-        private void listBoxSuggestions_SelectedIndexChanged(object sender, EventArgs e)
+        // --- Load dictionary from Excel ---
+        public void LoadDictionary(List<(string Abbrev, string FullForm)> entries)
         {
 
+            listViewDictionary.Items.Clear();
+            foreach (var entry in entries)
+            {
+                var item = new ListViewItem(entry.Abbrev);
+                item.SubItems.Add(entry.FullForm);
+                listViewDictionary.Items.Add(item);
+            }
         }
+
+        private void TabControlModes_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (CurrentMode == Mode.Dictionary)
+            {
+                // Load abbreviations into dictionary view whenever user switches to the Dictionary tab
+                var entries = new List<(string Abbrev, string FullForm)>();
+
+                foreach (var abbreviation in AbbreviationManager.GetAllPhrases())
+                {
+                    try
+                    {
+                        var fullForm = AbbreviationManager.GetAbbreviation(abbreviation);
+
+                        if (!string.IsNullOrEmpty(fullForm))
+                            entries.Add((abbreviation, fullForm));
+                    }
+                    catch (System.Runtime.InteropServices.COMException)
+                    {
+                        continue;
+                    }
+                }
+
+                // ✅ Sort alphabetically by abbreviation
+                entries = entries
+                    .OrderBy(entry => entry.Abbrev, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                LoadDictionary(entries);
+            }
+        }
+
+
+
+
     }
 }

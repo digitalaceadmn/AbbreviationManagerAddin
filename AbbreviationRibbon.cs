@@ -40,7 +40,8 @@ namespace AbbreviationWordAddin
         {
             try
             {
-                Globals.ThisAddIn.SuggestionPaneControl?.SetSuggestionsVisible(true);
+                //Globals.ThisAddIn.SuggestionPaneControl?.SetSuggestionsVisible(true);
+                Globals.ThisAddIn.isAbbreviationEnabled = true;
                 var application = Globals.ThisAddIn.Application;
                 AutoCorrect autoCorrect = application.AutoCorrect;
 
@@ -71,7 +72,8 @@ namespace AbbreviationWordAddin
         {
             try
             {
-                Globals.ThisAddIn.SuggestionPaneControl?.SetSuggestionsVisible(false);
+                Globals.ThisAddIn.isAbbreviationEnabled = false;
+                //Globals.ThisAddIn.SuggestionPaneControl?.SetSuggestionsVisible(false);
 
                 var application = Globals.ThisAddIn.Application;
                 AutoCorrect autoCorrect = application.AutoCorrect;
