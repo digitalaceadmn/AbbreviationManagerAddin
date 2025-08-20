@@ -34,7 +34,7 @@
     <PublishUrl>D:\add-in\</PublishUrl>
     <InstallUrl />
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.83</ApplicationVersion>
+    <ApplicationVersion>1.0.0.84</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -344,11 +344,11 @@
     <EmbeddedResource Include="Templates\Signal Form.docx" />
     <EmbeddedResource Include="Templates\Statement of Case %28DPM%29.docx" />
     <EmbeddedResource Include="Templates\Statement of Case.docx" />
-    <None Include="Templates\Appreciation.docx" />
+    <EmbeddedResource Include="Templates\Appreciation.docx" />
     <None Include="Templates\Case Study.docx" />
-    <None Include="Templates\Op order.docx" />
-    <None Include="Templates\Tour Notes.docx" />
-    <None Include="Templates\Warning Order.docx" />
+    <EmbeddedResource Include="Templates\Op order.docx" />
+    <EmbeddedResource Include="Templates\Tour Notes.docx" />
+    <EmbeddedResource Include="Templates\Warning Order.docx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>

@@ -1,16 +1,17 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System;
+﻿using Microsoft.Office.Interop.Word;
+using Microsoft.Office.Tools;
+using Microsoft.Office.Tools.Word;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Xml.Linq;
-using Word = Microsoft.Office.Interop.Word;
-using Office = Microsoft.Office.Core;
-using Microsoft.Office.Tools.Word;
-using Microsoft.Office.Interop.Word;
-using System.Diagnostics;
-using Action = System.Action;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using Microsoft.Office.Tools;
+using System.Xml.Linq;
+using Action = System.Action;
+using Office = Microsoft.Office.Core;
+using Word = Microsoft.Office.Interop.Word;
 
 
 namespace AbbreviationWordAddin
@@ -47,6 +48,7 @@ namespace AbbreviationWordAddin
         bool ignoreAllChosen = false;
         private bool replaceAllForPhrase;
         private bool ignoreAllForPhrase;
+        private Dictionary<Word.Window, CustomTaskPane> taskPanes = new Dictionary<Word.Window, CustomTaskPane>();
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -67,9 +69,7 @@ namespace AbbreviationWordAddin
                     autoCorrect.Entries[i].Delete();
                 }
 
-                this.Application.DocumentOpen += Application_DocumentOpen;
-                ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
-                //this.Application.WindowActivate += Application_WindowActivate;
+              
 
 
                 if (lastLoadedVersion != currentVersion)
@@ -117,6 +117,12 @@ namespace AbbreviationWordAddin
                 debounceTimer.Interval = DebounceDelayMs;
                 debounceTimer.Tick += DebounceTimer_Tick;
 
+                ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
+                ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
+                ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
+
+                EnsureTaskPaneVisible(this.Application.ActiveWindow);
+
 
             }
             catch (Exception ex)
@@ -130,36 +136,70 @@ namespace AbbreviationWordAddin
             }
         }
 
-       
+
         private void Application_DocumentOpen(Word.Document Doc)
         {
-            EnsureTaskPaneVisible();
+            EnsureTaskPaneVisible(this.Application.ActiveWindow);
         }
 
         private void Application_NewDocument(Word.Document Doc)
         {
-            
-            EnsureTaskPaneVisible();
+            EnsureTaskPaneVisible(this.Application.ActiveWindow);
         }
 
-
-        private void EnsureTaskPaneVisible()
+        private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
         {
-            // Check if the pane already exists for this document
+            EnsureTaskPaneVisible(Wn);
+        }
+
+        private void EnsureTaskPaneVisible(Word.Window window)
+        {
+            if (taskPanes.TryGetValue(window, out var existingPane))
+            {
+                if (existingPane != null && !existingPane.Visible)
+                {
+                    existingPane.Visible = true;
+                }
+                return;
+            }
+
             foreach (CustomTaskPane pane in this.CustomTaskPanes)
             {
-                if (pane.Control is SuggestionPaneControl && pane.Title == "Abbreviation Suggestions")
+                if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
                 {
+                    taskPanes[window] = pane;
                     pane.Visible = true;
-                    return; // Already exists, just show it
+                    return;
                 }
             }
 
-            // If not found, create a new one
-            SuggestionPaneControl = new SuggestionPaneControl();
-            suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
-            suggestionTaskPane.Visible = true;
+            var control = new SuggestionPaneControl();
+            var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
+            newPane.Width = 500;
+            newPane.Visible = true;
+
+            taskPanes[window] = newPane;
         }
+
+
+
+        //private void EnsureTaskPaneVisible()
+        //{
+        //    // Check if the pane already exists for this document
+        //    foreach (CustomTaskPane pane in this.CustomTaskPanes)
+        //    {
+        //        if (pane.Control is SuggestionPaneControl && pane.Title == "Abbreviation Suggestions")
+        //        {
+        //            pane.Visible = true;
+        //            return; // Already exists, just show it
+        //        }
+        //    }
+
+        //    // If not found, create a new one
+        //    SuggestionPaneControl = new SuggestionPaneControl();
+        //    suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
+        //    suggestionTaskPane.Visible = true;
+        //}
 
         private void loadAllAbbreviaitons()
         {
@@ -273,6 +313,57 @@ namespace AbbreviationWordAddin
             }
                 
         }
+
+        public void ReplaceAllDirectAbbreviations_Fast()
+        {
+            try
+            {
+                var doc = this.Application.ActiveDocument;
+
+                // Disable UI flicker
+                this.Application.ScreenUpdating = false;
+                this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
+                this.Application.ShowAnimation = false;
+                this.Application.DisplayStatusBar = false;
+
+                // Load abbreviations
+                if (reloadAbbrDataFromDict)
+                {
+                    AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+                }
+
+                string text = doc.Content.Text;
+
+                foreach (var phrase in AbbreviationManager.GetAllPhrases())
+                {
+                    string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                                        ?? AbbreviationManager.GetAbbreviation(phrase);
+
+                    if (!string.IsNullOrEmpty(replacement))
+                    {
+                        // Whole word replace
+                        text = System.Text.RegularExpressions.Regex.Replace(
+                            text,
+                            $@"\b{System.Text.RegularExpressions.Regex.Escape(phrase)}\b",
+                            replacement,
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                        );
+                    }
+                }
+
+                // Replace the entire document text in one go
+                doc.Content.Text = text;
+            }
+            finally
+            {
+                // Restore UI
+                this.Application.ScreenUpdating = true;
+                this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
+                this.Application.ShowAnimation = true;
+                this.Application.DisplayStatusBar = true;
+            }
+        }
+
 
         public void ReplaceAllDirectAbbreviations()
         {
@@ -499,173 +590,299 @@ namespace AbbreviationWordAddin
 
 
 
+        //public void ReplaceAllAbbreviations()
+        //{
+        //    if (!isAbbreviationEnabled) return;
+        //    var progressForm = new ProgressForm();
+
+        //    var syncContext = System.Threading.SynchronizationContext.Current;
+        //    bool completed = false;
+        //    Exception processError = null;
+
+        //    var progressThread = new System.Threading.Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            Word.Document doc = null;
+        //            syncContext.Send(_ =>
+        //            {
+        //                doc = this.Application.ActiveDocument;
+        //                this.Application.ScreenUpdating = false; 
+        //                this.Application.DisplayStatusBar = false; 
+        //                this.Application.Options.ReplaceSelection = false; 
+        //            }, null);
+
+        //            if (reloadAbbrDataFromDict)
+        //            {
+        //                syncContext.Send(_ =>
+        //                {
+        //                    AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+        //                }, null);
+        //            }
+
+        //            int totalWords = 0;
+        //            syncContext.Send(_ =>
+        //            { 
+        //                totalWords = doc.Words.Count;
+        //            }, null);
+
+        //            int totalChunks = (totalWords + CHUNK_SIZE - 1) / CHUNK_SIZE;
+        //            int currentChunk = 0;
+
+
+        //            for (int startIndex = 1; startIndex <= totalWords && !completed; startIndex += CHUNK_SIZE)
+        //            {
+        //                currentChunk++;
+        //                int endIndex = Math.Min(startIndex + CHUNK_SIZE - 1, totalWords);
+
+        //                int percentage = (currentChunk * 100) / totalChunks;
+        //                progressForm.UpdateProgress(percentage, $"Processing chunk {currentChunk} of {totalChunks}...");
+
+        //                syncContext.Send(_ =>
+        //                {
+        //                    try
+        //                    {
+        //                        Word.Range chunkRange = doc.Range(doc.Words[startIndex].Start, doc.Words[endIndex].End);
+        //                        string chunkText = chunkRange.Text;
+        //                        bool hasMatches = false;
+
+        //                        foreach (var phrase in AbbreviationManager.GetAllPhrases())
+        //                        {
+        //                            if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
+        //                            {
+        //                                hasMatches = true;
+        //                                break;
+        //                            }
+        //                        }
+
+        //                        if (hasMatches)
+        //                        {
+        //                            foreach (var phrase in AbbreviationManager.GetAllPhrases())
+        //                            {
+        //                                string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+        //                                    ?? AbbreviationManager.GetAbbreviation(phrase);
+
+
+        //                                Word.Find find = doc.Content.Find;
+        //                                find.ClearFormatting();
+        //                                find.Text = phrase;
+        //                                find.MatchCase = false;
+        //                                find.MatchWholeWord = true;
+        //                                find.Wrap = Word.WdFindWrap.wdFindStop;
+
+
+
+        //                                while (find.Execute())
+        //                                {
+        //                                    Word.Range matchRange = find.Parent as Word.Range;
+        //                                    if (matchRange == null) break;
+
+
+        //                                    if (ignoreAllForPhrase)
+        //                                    {
+        //                                        continue;
+        //                                    }
+
+        //                                    using (var dlg = new ReplaceDialog(phrase, replacement))
+        //                                    {
+        //                                        var result = dlg.ShowDialog();
+        //                                        if (result == DialogResult.OK)
+        //                                        {
+        //                                            switch (dlg.UserChoice)
+        //                                            {
+        //                                                case ReplaceDialog.ReplaceAction.Replace:
+        //                                                    matchRange.Text = replacement;
+        //                                                    break;
+
+        //                                                case ReplaceDialog.ReplaceAction.ReplaceAll:
+        //                                                    matchRange.Text = replacement;
+        //                                                    ReplaceAllDirectAbbreviations_Fast();
+        //                                                    return;
+
+        //                                                case ReplaceDialog.ReplaceAction.Ignore:
+        //                                                    // skip this one
+        //                                                    break;
+
+        //                                                case ReplaceDialog.ReplaceAction.IgnoreAll:
+        //                                                    ignoreAllForPhrase = true; // future occurrences skipped automatically
+        //                                                    break;
+
+        //                                                case ReplaceDialog.ReplaceAction.Cancel:
+        //                                                case ReplaceDialog.ReplaceAction.Close:
+        //                                                    return; // stop everything
+        //                                            }
+        //                                        }
+        //                                        else
+        //                                        {
+        //                                            return; // user closed dialog abruptly → stop everything
+        //                                        }
+        //                                    }
+        //                                }
+
+
+
+        //                            }
+        //                        }
+
+        //                        if (chunkRange != null)
+        //                            System.Runtime.InteropServices.Marshal.ReleaseComObject(chunkRange);
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        processError = ex;
+        //                        completed = true; 
+        //                    }
+        //                }, null);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            processError = ex;
+        //        }
+        //        finally
+        //        {
+        //            syncContext.Send(_ =>
+        //            {
+        //                this.Application.ScreenUpdating = true; 
+        //                this.Application.DisplayStatusBar = true; 
+        //                this.Application.Options.ReplaceSelection = true; 
+        //            }, null);
+
+        //            completed = true;
+        //            syncContext.Post(_ => progressForm.Close(), null);
+        //        }
+        //    });
+
+        //    progressThread.Start();
+        //    progressForm.ShowDialog();
+
+        //}
+
+
         public void ReplaceAllAbbreviations()
         {
             if (!isAbbreviationEnabled) return;
-            var progressForm = new ProgressForm();
 
-            var syncContext = System.Threading.SynchronizationContext.Current;
-            bool completed = false;
-            Exception processError = null;
+            Word.Application app = this.Application;
+            Word.Document doc = app.ActiveDocument;
 
-            var progressThread = new System.Threading.Thread(() =>
+            app.ScreenUpdating = false;
+            app.DisplayStatusBar = false;
+
+            try
             {
-                try
-                {
-                    Word.Document doc = null;
-                    syncContext.Send(_ =>
-                    {
-                        doc = this.Application.ActiveDocument;
-                        this.Application.ScreenUpdating = false; 
-                        this.Application.DisplayStatusBar = false; 
-                        this.Application.Options.ReplaceSelection = false; 
-                    }, null);
+                if (reloadAbbrDataFromDict)
+                    AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
 
-                    if (reloadAbbrDataFromDict)
+                string fullText = doc.Content.Text;
+
+                while (true)
+                {
+                    int firstIndex = -1;
+                    string firstPhrase = null;
+                    string firstReplacement = null;
+
+                    foreach (var phrase in AbbreviationManager.GetAllPhrases())
                     {
-                        syncContext.Send(_ =>
+                        int idx = fullText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase);
+                        if (idx >= 0 && (firstIndex == -1 || idx < firstIndex))
                         {
-                            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
-                        }, null);
+                            firstIndex = idx;
+                            firstPhrase = phrase;
+                            firstReplacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                                               ?? AbbreviationManager.GetAbbreviation(phrase);
+                        }
                     }
 
-                    int totalWords = 0;
-                    syncContext.Send(_ =>
-                    { 
-                        totalWords = doc.Words.Count;
-                    }, null);
+                    if (firstIndex == -1) break;
 
-                    int totalChunks = (totalWords + CHUNK_SIZE - 1) / CHUNK_SIZE;
-                    int currentChunk = 0;
-
-
-                    for (int startIndex = 1; startIndex <= totalWords && !completed; startIndex += CHUNK_SIZE)
+                    using (var dlg = new ReplaceDialog(firstPhrase, firstReplacement))
                     {
-                        currentChunk++;
-                        int endIndex = Math.Min(startIndex + CHUNK_SIZE - 1, totalWords);
+                        var result = dlg.ShowDialog();
+                        if (result != DialogResult.OK) break;
 
-                        int percentage = (currentChunk * 100) / totalChunks;
-                        progressForm.UpdateProgress(percentage, $"Processing chunk {currentChunk} of {totalChunks}...");
-
-                        syncContext.Send(_ =>
+                        switch (dlg.UserChoice)
                         {
-                            try
-                            {
-                                Word.Range chunkRange = doc.Range(doc.Words[startIndex].Start, doc.Words[endIndex].End);
-                                string chunkText = chunkRange.Text;
-                                bool hasMatches = false;
+                            case ReplaceDialog.ReplaceAction.Replace:
+                                ReplaceFirstInRange(doc, firstPhrase, firstReplacement);
+                                break;
 
-                                foreach (var phrase in AbbreviationManager.GetAllPhrases())
-                                {
-                                    if (chunkText.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) != -1)
-                                    {
-                                        hasMatches = true;
-                                        break;
-                                    }
-                                }
+                            case ReplaceDialog.ReplaceAction.ReplaceAll:
+                                ReplaceAllDirectAbbreviations_Fast();
+                                //ReplaceAllInRange(doc, firstPhrase, firstReplacement);
+                                break;
 
-                                if (hasMatches)
-                                {
-                                    foreach (var phrase in AbbreviationManager.GetAllPhrases())
-                                    {
-                                        string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
-                                            ?? AbbreviationManager.GetAbbreviation(phrase);
+                            case ReplaceDialog.ReplaceAction.Ignore:
+                                SkipFirstInRange(doc, firstPhrase);
+                                break;
 
+                            case ReplaceDialog.ReplaceAction.IgnoreAll:
+                                RemoveAllInRange(doc, firstPhrase);
+                                break;
 
-                                        Word.Find find = doc.Content.Find;
-                                        find.ClearFormatting();
-                                        find.Text = phrase;
-                                        find.MatchCase = false;
-                                        find.MatchWholeWord = true;
-                                        find.Wrap = Word.WdFindWrap.wdFindStop;
-
-                                        
-
-                                        while (find.Execute())
-                                        {
-                                            Word.Range matchRange = find.Parent as Word.Range;
-                                            if (matchRange == null) break;
-
-                                            
-                                            if (ignoreAllForPhrase)
-                                            {
-                                                continue;
-                                            }
-
-                                            using (var dlg = new ReplaceDialog(phrase, replacement))
-                                            {
-                                                var result = dlg.ShowDialog();
-                                                if (result == DialogResult.OK)
-                                                {
-                                                    switch (dlg.UserChoice)
-                                                    {
-                                                        case ReplaceDialog.ReplaceAction.Replace:
-                                                            matchRange.Text = replacement;
-                                                            break;
-
-                                                        case ReplaceDialog.ReplaceAction.ReplaceAll:
-                                                            matchRange.Text = replacement;
-                                                            ReplaceAllDirectAbbreviations();
-                                                            return;
-
-                                                        case ReplaceDialog.ReplaceAction.Ignore:
-                                                            // skip this one
-                                                            break;
-
-                                                        case ReplaceDialog.ReplaceAction.IgnoreAll:
-                                                            ignoreAllForPhrase = true; // future occurrences skipped automatically
-                                                            break;
-
-                                                        case ReplaceDialog.ReplaceAction.Cancel:
-                                                        case ReplaceDialog.ReplaceAction.Close:
-                                                            return; // stop everything
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    return; // user closed dialog abruptly → stop everything
-                                                }
-                                            }
-                                        }
-
-
-                                        
-                                    }
-                                }
-
-                                if (chunkRange != null)
-                                    System.Runtime.InteropServices.Marshal.ReleaseComObject(chunkRange);
-                            }
-                            catch (Exception ex)
-                            {
-                                processError = ex;
-                                completed = true; 
-                            }
-                        }, null);
+                            case ReplaceDialog.ReplaceAction.Cancel:
+                            case ReplaceDialog.ReplaceAction.Close:
+                                return;
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    processError = ex;
-                }
-                finally
-                {
-                    syncContext.Send(_ =>
-                    {
-                        this.Application.ScreenUpdating = true; 
-                        this.Application.DisplayStatusBar = true; 
-                        this.Application.Options.ReplaceSelection = true; 
-                    }, null);
 
-                    completed = true;
-                    syncContext.Post(_ => progressForm.Close(), null);
+                    // refresh fullText from doc for next loop
+                    fullText = doc.Content.Text;
                 }
-            });
-
-            progressThread.Start();
-            progressForm.ShowDialog();
-
+            }
+            finally
+            {
+                app.ScreenUpdating = true;
+                app.DisplayStatusBar = true;
+            }
         }
+
+        // --- helpers that work directly in Word Ranges ---
+        private void ReplaceFirstInRange(Word.Document doc, string search, string replace)
+        {
+            Word.Range rng = doc.Content;
+            if (rng.Find.Execute(search, MatchCase: false, MatchWholeWord: true))
+            {
+                rng.Text = replace;
+            }
+        }
+
+        private void ReplaceAllInRange(Word.Document doc, string search, string replace)
+        {
+            Word.Range rng = doc.Content;
+            rng.Find.Execute(FindText: search,
+                             ReplaceWith: replace,
+                             Replace: Word.WdReplace.wdReplaceAll,
+                             MatchCase: false,
+                             MatchWholeWord: true);
+        }
+
+        private void SkipFirstInRange(Word.Document doc, string search)
+        {
+            Word.Range rng = doc.Content;
+            if (rng.Find.Execute(search, MatchCase: false, MatchWholeWord: true))
+            {
+                rng.Collapse(Word.WdCollapseDirection.wdCollapseEnd);
+            }
+        }
+
+        private void RemoveAllInRange(Word.Document doc, string search)
+        {
+            Word.Range rng = doc.Content;
+            rng.Find.Execute(FindText: search,
+                             ReplaceWith: "",
+                             Replace: Word.WdReplace.wdReplaceAll,
+                             MatchCase: false,
+                             MatchWholeWord: true);
+        }
+
+
+
+
+
+
+
+
 
 
         public void HighlightAllAbbreviations()
@@ -828,12 +1045,27 @@ namespace AbbreviationWordAddin
         private void SuggestionPaneControl_OnTextChanged(string inputText)
         {
             frozeSuggestions = false;
-            var matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
-                .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                .ToList();
+
+            List<(string Word, string Replacement)> matches;
+
+            if (SuggestionPaneControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+            {
+                matches = AbbreviationManager.GetAllPhrases()
+                    .Select(abbrev => (Word: abbrev, Replacement: AbbreviationManager.GetAbbreviation(abbrev)))
+                    .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
+                    .ToList();
+            }
+            else
+            {
+                matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
+                    .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                    .ToList();
+            }
 
             SuggestionPaneControl.ShowSuggestions(matches);
         }
+
 
         /// <summary>
         /// Event: User accepted a suggestion.
@@ -1018,9 +1250,15 @@ namespace AbbreviationWordAddin
 
                     string candidate = testRange.Text?.Trim();
                     if (string.IsNullOrEmpty(candidate)) continue;
-                    if (candidate.Length < 3) continue;
+                    if (SuggestionPaneControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+                        {
+                            continue;
+                        }
+                    else {
+                            if (candidate.Length < 3) continue;
+                        }
 
-                    if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
+                        if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
                             && !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
