@@ -384,24 +384,12 @@ namespace AbbreviationWordAddin
         private void btnEmailFormat_Click(object sender, RibbonControlEventArgs e)
         {
             string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.E-mail Format.docx", "E-mail Format.docx");
-            System.Windows.Forms.MessageBox.Show(
-                    "templatePath: " + templatePath,
-                    "templatePath",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Error
-                );
             InsertTemplate(templatePath);
         }
 
         private void btnTourNotes_Click(object sender, RibbonControlEventArgs e)
         {
             string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Tour Notes.docx", "Tour Notes.docx");
-            System.Windows.Forms.MessageBox.Show(
-                    "templatePath: " + templatePath,
-                    "templatePath",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Error
-                );
             InsertTemplate(templatePath);
         }
 
