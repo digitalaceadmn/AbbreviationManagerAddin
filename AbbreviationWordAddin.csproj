@@ -348,7 +348,7 @@
     <None Include="Templates\Case Study.docx" />
     <EmbeddedResource Include="Templates\Op order.docx" />
     <EmbeddedResource Include="Templates\Tour Notes.docx" />
-    <EmbeddedResource Include="Templates\Warning Order.docx" />
+    <EmbeddedResource Include="Templates\Warning Order.docx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
