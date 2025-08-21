@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace AbbreviationWordAddin
@@ -25,6 +26,16 @@ namespace AbbreviationWordAddin
             // set textbox values
             txtPhrase.Text = phrase;
             txtReplacement.Text = replacement;
+
+            // make dialog fixed & always on top
+            this.TopMost = true;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.StartPosition = FormStartPosition.Manual;
+            this.ShowInTaskbar = false;
+
+            // place at top-right of screen
+            var screen = Screen.PrimaryScreen.WorkingArea;
+            this.Location = new Point(screen.Right - this.Width, screen.Top);
 
             // wire up button click events
             btnReplace.Click += (s, e) =>

@@ -29,20 +29,21 @@
             this.listViewReverse = new System.Windows.Forms.ListView();
             this.tabPageDictionary = new System.Windows.Forms.TabPage();
             this.listViewDictionary = new System.Windows.Forms.ListView();
-
             this.tabControlModes.SuspendLayout();
             this.tabPageAbbreviation.SuspendLayout();
             this.tabPageReverse.SuspendLayout();
             this.tabPageDictionary.SuspendLayout();
             this.SuspendLayout();
-
+            // 
             // textBoxInput
+            // 
             this.textBoxInput.Location = new System.Drawing.Point(10, 10);
             this.textBoxInput.Name = "textBoxInput";
             this.textBoxInput.Size = new System.Drawing.Size(380, 22);
             this.textBoxInput.TabIndex = 0;
-
+            // 
             // tabControlModes
+            // 
             this.tabControlModes.Controls.Add(this.tabPageAbbreviation);
             this.tabControlModes.Controls.Add(this.tabPageReverse);
             this.tabControlModes.Controls.Add(this.tabPageDictionary);
@@ -51,76 +52,87 @@
             this.tabControlModes.SelectedIndex = 0;
             this.tabControlModes.Size = new System.Drawing.Size(644, 540);
             this.tabControlModes.TabIndex = 1;
-
+            // 
             // tabPageAbbreviation
+            // 
             this.tabPageAbbreviation.Controls.Add(this.listViewAbbrev);
             this.tabPageAbbreviation.Location = new System.Drawing.Point(4, 25);
             this.tabPageAbbreviation.Name = "tabPageAbbreviation";
             this.tabPageAbbreviation.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageAbbreviation.Size = new System.Drawing.Size(636, 511);
+            this.tabPageAbbreviation.Size = new System.Drawing.Size(1000, 705);
+            this.tabPageAbbreviation.TabIndex = 0;
             this.tabPageAbbreviation.Text = "Abbreviations";
             this.tabPageAbbreviation.UseVisualStyleBackColor = true;
-
+            // 
             // listViewAbbrev
+            // 
             this.listViewAbbrev.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewAbbrev.FullRowSelect = true;
             this.listViewAbbrev.HideSelection = false;
             this.listViewAbbrev.Location = new System.Drawing.Point(3, 3);
             this.listViewAbbrev.Name = "listViewAbbrev";
-            this.listViewAbbrev.Size = new System.Drawing.Size(630, 505);
+            this.listViewAbbrev.Size = new System.Drawing.Size(1000, 705);
             this.listViewAbbrev.TabIndex = 0;
             this.listViewAbbrev.UseCompatibleStateImageBehavior = false;
-
+            this.listViewAbbrev.SelectedIndexChanged += new System.EventHandler(this.listViewAbbrev_SelectedIndexChanged);
+            // 
             // tabPageReverse
+            // 
             this.tabPageReverse.Controls.Add(this.listViewReverse);
             this.tabPageReverse.Location = new System.Drawing.Point(4, 25);
             this.tabPageReverse.Name = "tabPageReverse";
             this.tabPageReverse.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageReverse.Size = new System.Drawing.Size(636, 511);
+            this.tabPageReverse.Size = new System.Drawing.Size(1000, 705);
+            this.tabPageReverse.TabIndex = 1;
             this.tabPageReverse.Text = "Reverse Abbreviations";
             this.tabPageReverse.UseVisualStyleBackColor = true;
-
+            // 
             // listViewReverse
+            // 
             this.listViewReverse.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewReverse.FullRowSelect = true;
             this.listViewReverse.HideSelection = false;
             this.listViewReverse.Location = new System.Drawing.Point(3, 3);
             this.listViewReverse.Name = "listViewReverse";
-            this.listViewReverse.Size = new System.Drawing.Size(630, 505);
+            this.listViewReverse.Size = new System.Drawing.Size(1000, 705); 
             this.listViewReverse.TabIndex = 0;
             this.listViewReverse.UseCompatibleStateImageBehavior = false;
-
+            // 
             // tabPageDictionary
+            // 
             this.tabPageDictionary.Controls.Add(this.listViewDictionary);
             this.tabPageDictionary.Location = new System.Drawing.Point(4, 25);
             this.tabPageDictionary.Name = "tabPageDictionary";
             this.tabPageDictionary.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageDictionary.Size = new System.Drawing.Size(636, 511);
+            this.tabPageDictionary.Size = new System.Drawing.Size(1000, 705);
+            this.tabPageDictionary.TabIndex = 2;
             this.tabPageDictionary.Text = "Dictionary";
             this.tabPageDictionary.UseVisualStyleBackColor = true;
-
+            // 
             // listViewDictionary
+            // 
             this.listViewDictionary.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewDictionary.FullRowSelect = true;
             this.listViewDictionary.HideSelection = false;
             this.listViewDictionary.Location = new System.Drawing.Point(3, 3);
             this.listViewDictionary.Name = "listViewDictionary";
-            this.listViewDictionary.Size = new System.Drawing.Size(630, 505);
+            this.listViewDictionary.Size = new System.Drawing.Size(1000, 705);
             this.listViewDictionary.TabIndex = 0;
             this.listViewDictionary.UseCompatibleStateImageBehavior = false;
-
+            // 
             // SuggestionPaneControl
+            // 
             this.Controls.Add(this.tabControlModes);
             this.Controls.Add(this.textBoxInput);
             this.Name = "SuggestionPaneControl";
-            this.Size = new System.Drawing.Size(700, 600);
-
+            this.Size = new System.Drawing.Size(1000, 705);
             this.tabControlModes.ResumeLayout(false);
             this.tabPageAbbreviation.ResumeLayout(false);
             this.tabPageReverse.ResumeLayout(false);
             this.tabPageDictionary.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
     }
 }

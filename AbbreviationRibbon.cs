@@ -158,10 +158,8 @@ namespace AbbreviationWordAddin
 
         private void ShowSuggestions_Click(object sender, RibbonControlEventArgs e)
         {
-            if (Globals.ThisAddIn.suggestionTaskPane != null)
-            {
-                Globals.ThisAddIn.suggestionTaskPane.Visible = true;
-            }
+            var window = Globals.ThisAddIn.Application.ActiveWindow;
+            Globals.ThisAddIn.EnsureTaskPaneVisible(window);
         }
     }
 }

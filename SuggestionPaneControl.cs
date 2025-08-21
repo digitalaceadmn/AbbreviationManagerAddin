@@ -198,8 +198,9 @@ namespace AbbreviationWordAddin
             }
         }
 
+        private void listViewAbbrev_SelectedIndexChanged(object sender, EventArgs e)
+        {
 
-
-
+        }
     }
 }
