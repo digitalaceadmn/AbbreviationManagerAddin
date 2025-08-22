@@ -121,7 +121,7 @@ namespace AbbreviationWordAddin
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
 
-                //EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                EnsureTaskPaneVisible(this.Application.ActiveWindow);
 
 
             }
@@ -144,42 +144,73 @@ namespace AbbreviationWordAddin
 
         private void Application_NewDocument(Word.Document Doc)
         {
-            EnsureTaskPaneVisible(this.Application.ActiveWindow);
+            try
+            {
+                MessageBox.Show("New document created. Name: " + Doc.Name, "Debug - NewDocument");
+
+                EnsureTaskPaneVisible(this.Application.ActiveWindow);
+
+                // Debug: Show how many phrases we currently have
+                var phrases = AbbreviationManager.GetAllPhrases();
+                if (phrases != null && phrases.Any())
+                {
+                    MessageBox.Show("Loaded phrases count: " + phrases.Count(), "Debug - Phrases Loaded");
+                }
+                else
+                {
+                    MessageBox.Show("No phrases found when creating new document.", "Debug - Phrases Missing");
+                }
+
+                loadAllAbbreviaitons();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in Application_NewDocument: " + ex.Message, "Error");
+            }
         }
+
 
         private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
         {
             EnsureTaskPaneVisible(Wn);
         }
 
-        public void EnsureTaskPaneVisible(Word.Window window)
-        {
-            if (taskPanes.TryGetValue(window, out var existingPane))
-            {
-                if (existingPane != null && !existingPane.Visible)
-                {
-                    existingPane.Visible = true;
-                }
-                return;
-            }
+        //public void EnsureTaskPaneVisible(Word.Window window)
+        //{
+        //    if (taskPanes.TryGetValue(window, out var existingPane))
+        //    {
+        //        if (existingPane != null && !existingPane.Visible)
+        //        {
+        //            existingPane.Visible = true;
+        //        }
+        //        return;
+        //    }
 
-            foreach (CustomTaskPane pane in this.CustomTaskPanes)
-            {
-                if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
-                {
-                    taskPanes[window] = pane;
-                    pane.Visible = true;
-                    return;
-                }
-            }
+        //    foreach (CustomTaskPane pane in this.CustomTaskPanes)
+        //    {
+        //        if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
+        //        {
+        //            taskPanes[window] = pane;
+        //            pane.Visible = true;
+        //            return;
+        //        }
+        //    }
 
-            var control = new SuggestionPaneControl();
-            var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
-            newPane.Width = 500;
-            newPane.Visible = true;
+        //    var control = new SuggestionPaneControl();
+        //    control.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+        //    control.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
 
-            taskPanes[window] = newPane;
-        }
+        //    var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
+        //    newPane.Width = 500;
+        //    newPane.Visible = true;
+
+        //    taskPanes[window] = newPane;
+
+        //    // Optionally trigger refresh immediately
+        //    var matches = CollectAllAbbreviations();
+        //    control.LoadMatches(matches);
+
+        //}
 
 
 
@@ -869,6 +900,17 @@ namespace AbbreviationWordAddin
             Word.Document doc = this.Application.ActiveDocument;
             string fullText = doc.Content.Text;
 
+            var phrases = AbbreviationManager.GetAllPhrases();
+
+            //if (phrases != null && phrases.Any())
+            //{
+            //    MessageBox.Show(string.Join(", ", phrases), "Phrases in AbbreviationManager");
+            //}
+            //else
+            //{
+            //    MessageBox.Show("No phrases found in AbbreviationManager.", "Phrases");
+            //}
+
             foreach (var phrase in AbbreviationManager.GetAllPhrases())
             {
                 if (string.IsNullOrWhiteSpace(phrase))
@@ -883,6 +925,7 @@ namespace AbbreviationWordAddin
                     string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
                                         ?? AbbreviationManager.GetAbbreviation(phrase);
 
+
                     results.Add(new MatchResult
                     {
                         Phrase = phrase,
@@ -896,30 +939,83 @@ namespace AbbreviationWordAddin
             return results.OrderBy(r => r.StartIndex).ToList();
         }
 
+        public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window)
+        {
+            if (taskPanes.TryGetValue(window, out var existingPane))
+            {
+                if (existingPane != null && !existingPane.Visible)
+                    existingPane.Visible = true;
+
+                if (existingPane?.Control is SuggestionPaneControl existingControl)
+                    return existingControl;
+            }
+
+            // Look for existing pane in CustomTaskPanes collection
+            foreach (CustomTaskPane pane in this.CustomTaskPanes)
+            {
+                if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
+                {
+                    taskPanes[window] = pane;
+                    pane.Visible = true;
+
+                    if (pane.Control is SuggestionPaneControl existingPaneControl)
+                        return existingPaneControl;
+                }
+            }
+
+            // Create new pane
+            var control = new SuggestionPaneControl();
+            control.OnTextChanged += SuggestionPaneControl_OnTextChanged;
+            control.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
+
+            var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
+            newPane.Width = 500;
+            newPane.Visible = true;
+
+            taskPanes[window] = newPane;
+            return control;
+        }
+
+
 
         public void ReplaceAllAbbreviations()
         {
-            var matches = CollectAllAbbreviations();
-
-            if (matches.Any())
+            try
             {
-                var pane = Globals.ThisAddIn.SuggestionPaneControl;
+                Word.Window activeWindow = this.Application.ActiveWindow;
 
-                if (pane.InvokeRequired)
+                // Rename variable to avoid conflict
+                var paneControl = EnsureTaskPaneVisible(activeWindow); // was 'control'
+
+                if (paneControl == null)
                 {
-                    pane.Invoke(new Action(() =>
-                    {
-                        Globals.ThisAddIn.suggestionTaskPane.Visible = true;
-                        pane.LoadMatches(matches);
-                    }));
+                    System.Windows.Forms.MessageBox.Show("Failed to get SuggestionPaneControl for active window!", "Error");
+                    return;
                 }
+
+                var matches = CollectAllAbbreviations();
+
+                if (!matches.Any())
+                {
+                    System.Windows.Forms.MessageBox.Show("No matches found.", "Debug");
+                    return;
+                }
+
+                if (paneControl.InvokeRequired)
+                    paneControl.Invoke(new Action(() => paneControl.LoadMatches(matches)));
                 else
-                {
-                    Globals.ThisAddIn.suggestionTaskPane.Visible = true;
-                    pane.LoadMatches(matches);
-                }
+                    paneControl.LoadMatches(matches);
+
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error in ReplaceAllAbbreviations: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
             }
         }
+
+
+
+
 
 
         //public void ReplaceAllAbbreviations()
@@ -1461,27 +1557,39 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void SuggestionPaneControl_OnTextChanged(string inputText)
         {
-            frozeSuggestions = false;
-
-            List<(string Word, string Replacement)> matches;
-
-            if (SuggestionPaneControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+            try
             {
-                matches = AbbreviationManager.GetAllPhrases()
-                    .Select(abbrev => (Word: abbrev, Replacement: AbbreviationManager.GetAbbreviation(abbrev)))
-                    .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
-                                p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
-                    .ToList();
-            }
-            else
-            {
-                matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
-                    .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                    .ToList();
-            }
+                frozeSuggestions = false;
 
-            SuggestionPaneControl.ShowSuggestions(matches);
+                // Get the SuggestionPaneControl for the active window
+                var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                if (currentControl == null) return;
+
+                List<(string Word, string Replacement)> matches;
+
+                if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+                {
+                    matches = AbbreviationManager.GetAllPhrases()
+                        .Select(abbrev => (Word: abbrev, Replacement: AbbreviationManager.GetAbbreviation(abbrev)))
+                        .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                    p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
+                        .ToList();
+                }
+                else
+                {
+                    matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
+                        .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                        .ToList();
+                }
+
+                currentControl.ShowSuggestions(matches);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error in OnTextChanged: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
         }
+
 
 
         /// <summary>
@@ -1653,9 +1761,15 @@ namespace AbbreviationWordAddin
         private void DebounceTimer_Tick(object sender, EventArgs e)
         {
             debounceTimer.Stop();
-            if (isAbbreviationEnabled) { 
-                try
+
+            if (!isAbbreviationEnabled) return;
+
+            try
             {
+                // Get the SuggestionPaneControl for the active window
+                var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                if (currentControl == null) return;
+
                 Word.Selection sel = this.Application.Selection;
                 if (sel?.Range == null) return;
 
@@ -1667,20 +1781,17 @@ namespace AbbreviationWordAddin
 
                     string candidate = testRange.Text?.Trim();
                     if (string.IsNullOrEmpty(candidate)) continue;
-                    if (SuggestionPaneControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
-                        {
-                            continue;
-                        }
-                    else {
-                            if (candidate.Length < 3) continue;
-                        }
 
-                        if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
+                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+                        continue;
+                    else if (candidate.Length < 3)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
                             && !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            Debug.WriteLine($"Detected undo for: {lastReplacedShortForm}");
                             lastUndoneWord = lastReplacedShortForm;
                         }
                     }
@@ -1688,59 +1799,53 @@ namespace AbbreviationWordAddin
                     if (!string.IsNullOrEmpty(lastUndoneWord)
                         && string.Equals(candidate, lastUndoneWord, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        Debug.WriteLine($"Skipping replacement for {candidate} because it was just undone.");
                         return;
                     }
 
-                        string lowerCandidate = candidate.ToLowerInvariant();
+                    string lowerCandidate = candidate.ToLowerInvariant();
 
-                        var matches = trie.GetWordsWithPrefix(lowerCandidate)
-                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                            .ToList();
+                    var matches = trie.GetWordsWithPrefix(lowerCandidate)
+                        .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                        .ToList();
 
-                        if (matches.Count == 0) continue;
+                    if (matches.Count == 0) continue;
 
-                        bool hasExact = matches.Any(p =>
-                            string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
+                    bool hasExact = matches.Any(p =>
+                        string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
 
-                        bool hasLonger = matches.Any(p =>
-                            p.Word.Split(' ').Length > candidate.Split(' ').Length);
+                    bool hasLonger = matches.Any(p =>
+                        p.Word.Split(' ').Length > candidate.Split(' ').Length);
 
-                        if (hasExact && !hasLonger)
-                        {
-                            if (IsLastCharSpace(sel))
-                            {
-                                ReplaceWithFullForm(candidate, testRange, sel);
-
-                                lastReplacedShortForm = candidate;
-                                lastReplacedFullForm = GetFullFormFor(candidate);
-
-                                lastUndoneWord = null;
-                            }
-                            return;
-                        }
-                        else if (hasExact && hasLonger)
-                        {
-                            SuggestionPaneControl.SetInputText(candidate);
-                            SuggestionPaneControl.ShowSuggestions(matches);
-                            return;
-                        }
-                        else
+                    if (hasExact && !hasLonger)
                     {
-                        SuggestionPaneControl.SetInputText(candidate);
-                        SuggestionPaneControl.ShowSuggestions(matches);
+                        if (IsLastCharSpace(sel))
+                        {
+                            ReplaceWithFullForm(candidate, testRange, sel);
+
+                            lastReplacedShortForm = candidate;
+                            lastReplacedFullForm = GetFullFormFor(candidate);
+
+                            lastUndoneWord = null;
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        currentControl.SetInputText(candidate);
+                        currentControl.ShowSuggestions(matches);
                         return;
                     }
                 }
-                    // ✅ If no match — clear the undo word so we don’t block forever
-                    lastUndoneWord = null;
+
+                // Clear undo word if no match
+                lastUndoneWord = null;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error in DebounceTimer_Tick: " + ex.Message);
-            }
+                System.Windows.Forms.MessageBox.Show("Error in DebounceTimer_Tick: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
             }
         }
+
 
         private bool IsLastCharSpace(Word.Selection sel)
         {

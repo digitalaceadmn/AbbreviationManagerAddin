@@ -78,7 +78,7 @@ namespace AbbreviationWordAddin
             this.tabControlModes.Location = new System.Drawing.Point(10, 40);
             this.tabControlModes.Name = "tabControlModes";
             this.tabControlModes.SelectedIndex = 0;
-            this.tabControlModes.Size = new System.Drawing.Size(644, 540);
+            this.tabControlModes.Size = new System.Drawing.Size(987, 540);
             this.tabControlModes.TabIndex = 2;
             // 
             // tabPageAbbreviation
@@ -86,7 +86,7 @@ namespace AbbreviationWordAddin
             this.tabPageAbbreviation.Controls.Add(this.listViewAbbrev);
             this.tabPageAbbreviation.Location = new System.Drawing.Point(4, 25);
             this.tabPageAbbreviation.Name = "tabPageAbbreviation";
-            this.tabPageAbbreviation.Size = new System.Drawing.Size(636, 511);
+            this.tabPageAbbreviation.Size = new System.Drawing.Size(979, 511);
             this.tabPageAbbreviation.TabIndex = 0;
             this.tabPageAbbreviation.Text = "Abbreviations";
             // 
@@ -97,7 +97,7 @@ namespace AbbreviationWordAddin
             this.listViewAbbrev.HideSelection = false;
             this.listViewAbbrev.Location = new System.Drawing.Point(0, 0);
             this.listViewAbbrev.Name = "listViewAbbrev";
-            this.listViewAbbrev.Size = new System.Drawing.Size(636, 511);
+            this.listViewAbbrev.Size = new System.Drawing.Size(979, 511);
             this.listViewAbbrev.TabIndex = 0;
             this.listViewAbbrev.UseCompatibleStateImageBehavior = false;
             // 
@@ -140,10 +140,6 @@ namespace AbbreviationWordAddin
             this.listViewDictionary.Size = new System.Drawing.Size(636, 511);
             this.listViewDictionary.TabIndex = 0;
             this.listViewDictionary.UseCompatibleStateImageBehavior = false;
-
-
-            //Replace ALL Sections
-
             // 
             // lblWord
             // 
@@ -261,11 +257,5 @@ namespace AbbreviationWordAddin
             this.PerformLayout();
 
         }
-
-       
-
-        
-
-        
     }
 }

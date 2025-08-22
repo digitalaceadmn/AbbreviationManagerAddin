@@ -217,17 +217,20 @@ namespace AbbreviationWordAddin
             foreach (var m in matches)
             {
                 var item = new ListViewItem(new string[] { m.Phrase, m.Replacement });
-                item.Tag = m; // store MatchResult for later
+                item.Tag = m;
                 listViewAbbrev.Items.Add(item);
+
+                // Fixed MessageBox
+                MessageBox.Show("Showing in list: " + m.Phrase, "Match Added");
             }
 
-            // auto select first match if available
             if (listViewAbbrev.Items.Count > 0)
             {
                 listViewAbbrev.Items[0].Selected = true;
                 UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
             }
         }
+
 
         private void UpdateTextBoxes(MatchResult match)
         {
@@ -329,7 +332,5 @@ namespace AbbreviationWordAddin
             txtWord.Text = "";
             txtReplacement.Text = "";
         }
-
-
     }
 }
