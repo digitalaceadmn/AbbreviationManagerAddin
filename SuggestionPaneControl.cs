@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
+using static AbbreviationWordAddin.ThisAddIn;
 
 namespace AbbreviationWordAddin
 {
@@ -198,9 +199,137 @@ namespace AbbreviationWordAddin
             }
         }
 
-        private void listViewAbbrev_SelectedIndexChanged(object sender, EventArgs e)
+    
+        private void SuggestionPaneControl_Load(object sender, EventArgs e)
         {
 
         }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        public void LoadMatches(List<MatchResult> matches)
+        {
+            listViewAbbrev.Items.Clear();
+
+            foreach (var m in matches)
+            {
+                var item = new ListViewItem(new string[] { m.Phrase, m.Replacement });
+                item.Tag = m; // store MatchResult for later
+                listViewAbbrev.Items.Add(item);
+            }
+
+            // auto select first match if available
+            if (listViewAbbrev.Items.Count > 0)
+            {
+                listViewAbbrev.Items[0].Selected = true;
+                UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
+            }
+        }
+
+        private void UpdateTextBoxes(MatchResult match)
+        {
+            txtWord.Text = match.Phrase;
+            txtReplacement.Text = match.Replacement;
+        }
+
+        private void listViewAbbrev_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listViewAbbrev.SelectedItems.Count > 0)
+            {
+                var match = (MatchResult)listViewAbbrev.SelectedItems[0].Tag;
+                UpdateTextBoxes(match);
+            }
+        }
+
+        private void btnReplace_Click(object sender, EventArgs e)
+        {
+            if (listViewAbbrev.SelectedItems.Count > 0)
+            {
+                var match = (MatchResult)listViewAbbrev.SelectedItems[0].Tag;
+
+                // take latest replacement from textbox (if user edits)
+                string replacement = txtReplacement.Text.Trim();
+                if (string.IsNullOrEmpty(replacement))
+                    replacement = match.Replacement;
+
+                // replace in Word document (real-time)
+                Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, false);
+
+                // update UI: remove replaced item
+                listViewAbbrev.Items.Remove(listViewAbbrev.SelectedItems[0]);
+
+                // move to next item automatically
+                if (listViewAbbrev.Items.Count > 0)
+                {
+                    listViewAbbrev.Items[0].Selected = true;
+                    UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
+                }
+                else
+                {
+                    txtWord.Text = "";
+                    txtReplacement.Text = "";
+                }
+            }
+        }
+
+        private void btnReplaceAll_Click(object sender, EventArgs e)
+        {
+            string word = txtWord.Text.Trim();
+            string replacement = txtReplacement.Text.Trim();
+
+            if (!string.IsNullOrEmpty(word) && !string.IsNullOrEmpty(replacement))
+                Globals.ThisAddIn.ReplaceAllDirectAbbreviations_Fast();
+        }
+
+
+        private void btnIgnore_Click(object sender, EventArgs e)
+        {
+            if (listViewAbbrev.SelectedItems.Count > 0)
+            {
+                // remove current item without replacing
+                listViewAbbrev.Items.Remove(listViewAbbrev.SelectedItems[0]);
+
+                // move to next automatically
+                if (listViewAbbrev.Items.Count > 0)
+                {
+                    listViewAbbrev.Items[0].Selected = true;
+                    UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
+                }
+                else
+                {
+                    txtWord.Text = "";
+                    txtReplacement.Text = "";
+                }
+            }
+        }
+
+        private void btnIgnoreAll_Click(object sender, EventArgs e)
+        {
+            // clear all matches
+            listViewAbbrev.Items.Clear();
+            txtWord.Text = "";
+            txtReplacement.Text = "";
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            // behaves same as ignore all
+            listViewAbbrev.Items.Clear();
+            txtWord.Text = "";
+            txtReplacement.Text = "";
+        }
+
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            // clear all matches and close the form
+            listViewAbbrev.Items.Clear();
+            txtWord.Text = "";
+            txtReplacement.Text = "";
+        }
+
+
     }
 }
