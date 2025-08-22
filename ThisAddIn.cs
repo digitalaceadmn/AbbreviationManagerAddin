@@ -96,13 +96,15 @@ namespace AbbreviationWordAddin
 
                 loadAllAbbreviaitons();
 
-                // Create the global SuggestionPaneControl (not bound yet)
+                // Create *global* taskpane control, but don’t attach to any window yet
                 SuggestionPaneControl = new SuggestionPaneControl();
                 suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
-                SuggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
-                SuggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
-                suggestionTaskPane.Width = 500;
-                suggestionTaskPane.Visible = false; // hide until a doc/window is active
+                suggestionTaskPane.Visible = false; // keep hidden until doc/window is ready
+
+                // Hook Word events
+                ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
+                ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
+                ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
 
                 // Timers
                 typingTimer = new Timer { Interval = 300 };
@@ -115,16 +117,6 @@ namespace AbbreviationWordAddin
                 };
                 debounceTimer.Tick += DebounceTimer_Tick;
 
-                // Hook into Word events
-                ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
-                ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
-                ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
-
-                // If Word already started with a blank document, show the pane
-                if (this.Application.Documents.Count > 0)
-                {
-                    EnsureTaskPaneVisible(this.Application.ActiveWindow);
-                }
             }
             catch (Exception ex)
             {
@@ -137,12 +129,12 @@ namespace AbbreviationWordAddin
             }
         }
 
-        private void Application_DocumentOpen(Word.Document Doc)
+        private void Application_NewDocument(Word.Document Doc)
         {
             EnsureTaskPaneVisible(this.Application.ActiveWindow);
         }
 
-        private void Application_NewDocument(Word.Document Doc)
+        private void Application_DocumentOpen(Word.Document Doc)
         {
             EnsureTaskPaneVisible(this.Application.ActiveWindow);
         }
@@ -156,26 +148,14 @@ namespace AbbreviationWordAddin
         {
             if (window == null) return;
 
-            if (taskPanes.TryGetValue(window, out var existingPane))
+            // See if we already added a pane for this window
+            if (taskPanes.ContainsKey(window))
             {
-                if (existingPane != null && !existingPane.Visible)
-                {
-                    existingPane.Visible = true;
-                }
+                taskPanes[window].Visible = true;
                 return;
             }
 
-            foreach (CustomTaskPane pane in this.CustomTaskPanes)
-            {
-                if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
-                {
-                    taskPanes[window] = pane;
-                    pane.Visible = true;
-                    return;
-                }
-            }
-
-            // Create a fresh control + pane for this window
+            // Create a new task pane for this window
             var control = new SuggestionPaneControl();
             var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
             newPane.Width = 500;
