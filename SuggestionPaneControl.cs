@@ -221,7 +221,6 @@ namespace AbbreviationWordAddin
                 listViewAbbrev.Items.Add(item);
 
                 // Fixed MessageBox
-                MessageBox.Show("Showing in list: " + m.Phrase, "Match Added");
             }
 
             if (listViewAbbrev.Items.Count > 0)

@@ -900,31 +900,35 @@ namespace AbbreviationWordAddin
             Word.Document doc = this.Application.ActiveDocument;
             string fullText = doc.Content.Text;
 
-            var phrases = AbbreviationManager.GetAllPhrases();
+            // Get all phrases, longest first
+            var phrases = AbbreviationManager.GetAllPhrases()
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .OrderByDescending(p => p.Length)
+                .ToList();
 
-            //if (phrases != null && phrases.Any())
-            //{
-            //    MessageBox.Show(string.Join(", ", phrases), "Phrases in AbbreviationManager");
-            //}
-            //else
-            //{
-            //    MessageBox.Show("No phrases found in AbbreviationManager.", "Phrases");
-            //}
+            var usedIndexes = new HashSet<int>();
 
-            foreach (var phrase in AbbreviationManager.GetAllPhrases())
+            foreach (var phrase in phrases)
             {
-                if (string.IsNullOrWhiteSpace(phrase))
-                    continue;
-
-                // Regex for exact word match (case-insensitive)
-                string pattern = $@"\b{Regex.Escape(phrase)}\b";
-                var matches = Regex.Matches(fullText, pattern, RegexOptions.IgnoreCase);
+                string pattern = Regex.Escape(phrase);
+                var matches = Regex.Matches(fullText, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 foreach (Match m in matches)
                 {
-                    string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
-                                        ?? AbbreviationManager.GetAbbreviation(phrase);
+                    // Skip if this range overlaps a previous longer match
+                    bool overlap = false;
+                    for (int i = m.Index; i < m.Index + m.Length; i++)
+                    {
+                        if (usedIndexes.Contains(i))
+                        {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    if (overlap) continue;
 
+                    string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                                         ?? AbbreviationManager.GetAbbreviation(phrase);
 
                     results.Add(new MatchResult
                     {
@@ -933,11 +937,17 @@ namespace AbbreviationWordAddin
                         StartIndex = m.Index,
                         Length = m.Length
                     });
+
+                    // Mark this range as used
+                    for (int i = m.Index; i < m.Index + m.Length; i++)
+                        usedIndexes.Add(i);
                 }
             }
 
             return results.OrderBy(r => r.StartIndex).ToList();
         }
+
+
 
         public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window)
         {
@@ -1766,38 +1776,56 @@ namespace AbbreviationWordAddin
 
             try
             {
-                // Get the SuggestionPaneControl for the active window
                 var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow);
                 if (currentControl == null) return;
 
                 Word.Selection sel = this.Application.Selection;
                 if (sel?.Range == null) return;
 
-                for (int wordCount = maxPhraseLength; wordCount >= 1; wordCount--)
+                Word.Range selRange = sel.Range.Duplicate;
+
+                // Examine up to maxPhraseLength words backward, but stop at line break
+                int wordsChecked = 0;
+                Word.Range testRange = selRange.Duplicate;
+                while (wordsChecked < maxPhraseLength)
                 {
-                    Word.Range testRange = sel.Range.Duplicate;
-                    testRange.MoveStart(Word.WdUnits.wdWord, -wordCount);
-                    testRange.MoveEnd(Word.WdUnits.wdWord, 0);
+                    if (testRange.Start == 0) break;
 
-                    string candidate = testRange.Text?.Trim();
-                    if (string.IsNullOrEmpty(candidate)) continue;
+                    testRange.MoveStart(Word.WdUnits.wdWord, -1);
+                    string candidate = testRange.Text.Trim();
 
-                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+                    // Stop if we cross a newline
+                    if (candidate.Contains("\r") || candidate.Contains("\n"))
+                    {
+                        testRange.MoveStart(Word.WdUnits.wdWord, 1); // move back to exclude newline
+                        break;
+                    }
+
+                    if (string.IsNullOrEmpty(candidate))
+                    {
+                        wordsChecked++;
                         continue;
-                    else if (candidate.Length < 3)
-                        continue;
+                    }
 
+                    // Skip if too short or reverse mode
+                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse || candidate.Length < 3)
+                    {
+                        wordsChecked++;
+                        continue;
+                    }
+
+                    // Skip recently undone words
                     if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
-                        if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase)
-                            && !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase) &&
+                            !string.Equals(candidate, lastReplacedFullForm, StringComparison.InvariantCultureIgnoreCase))
                         {
                             lastUndoneWord = lastReplacedShortForm;
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(lastUndoneWord)
-                        && string.Equals(candidate, lastUndoneWord, StringComparison.InvariantCultureIgnoreCase))
+                    if (!string.IsNullOrEmpty(lastUndoneWord) &&
+                        string.Equals(candidate, lastUndoneWord, StringComparison.InvariantCultureIgnoreCase))
                     {
                         return;
                     }
@@ -1808,7 +1836,11 @@ namespace AbbreviationWordAddin
                         .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
                         .ToList();
 
-                    if (matches.Count == 0) continue;
+                    if (matches.Count == 0)
+                    {
+                        wordsChecked++;
+                        continue;
+                    }
 
                     bool hasExact = matches.Any(p =>
                         string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
@@ -1824,7 +1856,6 @@ namespace AbbreviationWordAddin
 
                             lastReplacedShortForm = candidate;
                             lastReplacedFullForm = GetFullFormFor(candidate);
-
                             lastUndoneWord = null;
                         }
                         return;
@@ -1837,12 +1868,16 @@ namespace AbbreviationWordAddin
                     }
                 }
 
-                // Clear undo word if no match
                 lastUndoneWord = null;
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show("Error in DebounceTimer_Tick: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show(
+                    "Error in DebounceTimer_Tick: " + ex.Message + "\n" + ex.StackTrace,
+                    "Exception",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Error
+                );
             }
         }
 
