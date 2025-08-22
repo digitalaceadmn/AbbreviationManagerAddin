@@ -52,16 +52,14 @@ namespace AbbreviationWordAddin
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-
             try
             {
-               
                 System.Windows.Forms.MessageBox.Show(
-                    "lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
+                    "lastLoadedVersion " + lastLoadedVersion + " | currentVersion " + currentVersion,
                     "Abbreviation Loading status",
                     System.Windows.Forms.MessageBoxButtons.OK,
                     System.Windows.Forms.MessageBoxIcon.Information
-                 );
+                );
 
                 var autoCorrect = Globals.ThisAddIn.Application.AutoCorrect;
                 for (int i = autoCorrect.Entries.Count; i >= 1; i--)
@@ -69,18 +67,15 @@ namespace AbbreviationWordAddin
                     autoCorrect.Entries[i].Delete();
                 }
 
-              
-
-
                 if (lastLoadedVersion != currentVersion)
                 {
-                    // Version changed → clear file cache
                     System.Windows.Forms.MessageBox.Show(
-                        "Clear cache because lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
+                        "Clear cache because lastLoadedVersion " + lastLoadedVersion + " | currentVersion " + currentVersion,
                         "Abbreviation Loading status",
                         System.Windows.Forms.MessageBoxButtons.OK,
                         System.Windows.Forms.MessageBoxIcon.Information
-                     );
+                    );
+
                     reloadAbbrDataFromDict = true;
                     AbbreviationManager.ClearCacheFile();
                     Properties.Settings.Default.IsAutoCorrectLoaded = false;
@@ -89,9 +84,8 @@ namespace AbbreviationWordAddin
                     Properties.Settings.Default.Reload();
                 }
 
-
+                // Load abbreviations + build trie
                 AbbreviationManager.LoadAbbreviations();
-
                 allPhrases = AbbreviationManager.GetAllPhrases().ToList();
 
                 trie = new Trie();
@@ -102,29 +96,35 @@ namespace AbbreviationWordAddin
 
                 loadAllAbbreviaitons();
 
+                // Create the global SuggestionPaneControl (not bound yet)
                 SuggestionPaneControl = new SuggestionPaneControl();
                 suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
                 SuggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
                 SuggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
                 suggestionTaskPane.Width = 500;
-                suggestionTaskPane.Visible = true;
+                suggestionTaskPane.Visible = false; // hide until a doc/window is active
 
+                // Timers
                 typingTimer = new Timer { Interval = 300 };
                 typingTimer.Tick += TypingTimer_Tick;
                 typingTimer.Start();
 
-                debounceTimer = new System.Windows.Forms.Timer();
-                debounceTimer.Interval = DebounceDelayMs;
+                debounceTimer = new System.Windows.Forms.Timer
+                {
+                    Interval = DebounceDelayMs
+                };
                 debounceTimer.Tick += DebounceTimer_Tick;
 
+                // Hook into Word events
                 ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
 
-
-                //EnsureTaskPaneVisible(this.Application.ActiveWindow);
-
-
+                // If Word already started with a blank document, show the pane
+                if (this.Application.Documents.Count > 0)
+                {
+                    EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                }
             }
             catch (Exception ex)
             {
@@ -136,7 +136,6 @@ namespace AbbreviationWordAddin
                 );
             }
         }
-
 
         private void Application_DocumentOpen(Word.Document Doc)
         {
@@ -155,6 +154,8 @@ namespace AbbreviationWordAddin
 
         public void EnsureTaskPaneVisible(Word.Window window)
         {
+            if (window == null) return;
+
             if (taskPanes.TryGetValue(window, out var existingPane))
             {
                 if (existingPane != null && !existingPane.Visible)
@@ -174,6 +175,7 @@ namespace AbbreviationWordAddin
                 }
             }
 
+            // Create a fresh control + pane for this window
             var control = new SuggestionPaneControl();
             var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
             newPane.Width = 500;
@@ -181,6 +183,7 @@ namespace AbbreviationWordAddin
 
             taskPanes[window] = newPane;
         }
+
 
 
 
