@@ -49,6 +49,22 @@ namespace AbbreviationWordAddin
         private bool replaceAllForPhrase;
         private bool ignoreAllForPhrase;
         private Dictionary<Word.Window, CustomTaskPane> taskPanes = new Dictionary<Word.Window, CustomTaskPane>();
+        private HashSet<Word.Window> userClosedTaskPanes = new HashSet<Word.Window>();
+
+        private void TrackTaskPaneVisibility(CustomTaskPane pane, Word.Window window)
+        {
+            pane.VisibleChanged += (s, e) =>
+            {
+                if (!pane.Visible)
+                {
+                    userClosedTaskPanes.Add(window);
+                }
+                else
+                {
+                    userClosedTaskPanes.Remove(window); 
+                }
+            };
+        }
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -118,7 +134,7 @@ namespace AbbreviationWordAddin
                 debounceTimer.Tick += DebounceTimer_Tick;
 
                 ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
-                ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
+                //((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentChange += Application_DocumentChange;
 
@@ -138,10 +154,11 @@ namespace AbbreviationWordAddin
         }
 
 
-        private void Application_DocumentOpen(Word.Document Doc)
-        {
-            EnsureTaskPaneVisible(this.Application.ActiveWindow);
-        }
+        //private void Application_DocumentOpen(Word.Document Doc)
+        //{
+        //    if (!userClosedTaskPanes.Contains(this.Application.ActiveWindow))
+        //        EnsureTaskPaneVisible(this.Application.ActiveWindow);
+        //}
 
         private void Application_NewDocument(Word.Document Doc)
         {
@@ -311,13 +328,11 @@ namespace AbbreviationWordAddin
             {
                 var doc = this.Application.ActiveDocument;
 
-                // Disable UI flicker
                 this.Application.ScreenUpdating = false;
                 this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
                 this.Application.ShowAnimation = false;
                 this.Application.DisplayStatusBar = false;
 
-                // Load abbreviations
                 if (reloadAbbrDataFromDict)
                 {
                     AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
@@ -332,7 +347,6 @@ namespace AbbreviationWordAddin
 
                     if (!string.IsNullOrEmpty(replacement))
                     {
-                        // Whole word replace
                         text = System.Text.RegularExpressions.Regex.Replace(
                             text,
                             $@"\b{System.Text.RegularExpressions.Regex.Escape(phrase)}\b",
@@ -342,12 +356,10 @@ namespace AbbreviationWordAddin
                     }
                 }
 
-                // Replace the entire document text in one go
                 doc.Content.Text = text;
             }
             finally
             {
-                // Restore UI
                 this.Application.ScreenUpdating = true;
                 this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
                 this.Application.ShowAnimation = true;
@@ -750,101 +762,7 @@ namespace AbbreviationWordAddin
         //}
 
 
-        //public void ReplaceAllAbbreviations()
-        //{
-        //    if (!isAbbreviationEnabled) return;
-
-        //    Word.Application app = this.Application;
-        //    Word.Document doc = app.ActiveDocument;
-
-        //    app.ScreenUpdating = false;
-        //    app.DisplayStatusBar = false;
-
-        //    try
-        //    {
-        //        if (reloadAbbrDataFromDict)
-        //            AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
-
-        //        int searchStart = 0;
-        //        string fullText = doc.Content.Text;
-
-        //        while (searchStart < fullText.Length)
-        //        {
-        //            int firstIndex = -1;
-        //            string firstPhrase = null;
-        //            string firstReplacement = null;
-
-        //            foreach (var phrase in AbbreviationManager.GetAllPhrases())
-        //            {
-        //                int idx = fullText.IndexOf(phrase, searchStart, StringComparison.OrdinalIgnoreCase);
-        //                if (idx >= 0 && (firstIndex == -1 || idx < firstIndex))
-        //                {
-        //                    firstIndex = idx;
-        //                    firstPhrase = phrase;
-        //                    firstReplacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
-        //                                       ?? AbbreviationManager.GetAbbreviation(phrase);
-        //                }
-        //            }
-
-        //            if (firstIndex == -1) break;
-
-        //            using (var dlg = new ReplaceDialog(firstPhrase, firstReplacement))
-        //            {
-        //                var result = dlg.ShowDialog();
-        //                if (result != DialogResult.OK) break;
-
-        //                switch (dlg.UserChoice)
-        //                {
-        //                    case ReplaceDialog.ReplaceAction.Replace:
-        //                        app.ScreenUpdating = true; // ensure UI refreshes
-        //                        ReplaceFirstInRange(doc, firstPhrase, firstReplacement, firstIndex);
-        //                        fullText = doc.Content.Text;
-        //                        searchStart = firstIndex + firstReplacement.Length;
-        //                        app.ScreenUpdating = false;
-        //                        break;
-
-        //                    case ReplaceDialog.ReplaceAction.Ignore:
-        //                        searchStart = firstIndex + firstPhrase.Length;
-        //                        break;
-
-        //                    case ReplaceDialog.ReplaceAction.ReplaceAll:
-        //                        ReplaceAllDirectAbbreviations_Fast();
-        //                        return;
-
-        //                    case ReplaceDialog.ReplaceAction.IgnoreAll:
-        //                    case ReplaceDialog.ReplaceAction.Cancel:
-        //                    case ReplaceDialog.ReplaceAction.Close:
-        //                        return;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    finally
-        //    {
-        //        app.ScreenUpdating = true;
-        //        app.DisplayStatusBar = true;
-        //    }
-        //}
-
-
-        // --- helpers that work directly in Word Ranges ---
-        //private void ReplaceFirstInRange(Word.Document doc, string search, string replace, int startIndex)
-        //{
-        //    Word.Range rng = doc.Range(startIndex, doc.Content.End);
-
-        //    var find = rng.Find;
-        //    find.ClearFormatting();
-        //    find.Text = search;
-        //    find.Replacement.ClearFormatting();
-        //    find.Replacement.Text = replace;
-
-        //    // Only replace the first match in this range
-        //    find.Forward = true;
-        //    find.Wrap = Word.WdFindWrap.wdFindStop;
-
-        //    // Execute replace once
-        //    find.Execute(Replace: Word.WdReplace.wdReplaceOne);
-        //}
+       
 
         public class MatchResult
         {
@@ -911,17 +829,16 @@ namespace AbbreviationWordAddin
 
         public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window)
         {
-            // Safeguard against null window or no open documents
             if (window == null || this.Application.Documents.Count == 0)
                 return null;
 
+            // Check if a pane already exists for this window
             if (taskPanes.TryGetValue(window, out var existingPane))
             {
-                if (existingPane != null && !existingPane.Visible)
+                if (!existingPane.Visible && !userClosedTaskPanes.Contains(window))
                     existingPane.Visible = true;
 
-                if (existingPane?.Control is SuggestionPaneControl existingControl)
-                    return existingControl;
+                return existingPane.Control as SuggestionPaneControl;
             }
 
             // Look for existing pane in CustomTaskPanes collection
@@ -930,14 +847,18 @@ namespace AbbreviationWordAddin
                 if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
                 {
                     taskPanes[window] = pane;
-                    pane.Visible = true;
 
-                    if (pane.Control is SuggestionPaneControl existingPaneControl)
-                        return existingPaneControl;
+                    if (!userClosedTaskPanes.Contains(window))
+                        pane.Visible = true;
+
+                    return pane.Control as SuggestionPaneControl;
                 }
             }
 
-            // Create new pane
+            // Only create a new pane if the user hasn't closed one
+            if (userClosedTaskPanes.Contains(window))
+                return null;
+
             var control = new SuggestionPaneControl();
             control.OnTextChanged += SuggestionPaneControl_OnTextChanged;
             control.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
@@ -945,10 +866,14 @@ namespace AbbreviationWordAddin
             var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
             newPane.Width = 500;
             newPane.Visible = true;
-
             taskPanes[window] = newPane;
+
+            TrackTaskPaneVisibility(newPane, window);
+
             return control;
         }
+
+
 
 
 
@@ -989,10 +914,6 @@ namespace AbbreviationWordAddin
         }
 
 
-
-
-
-        // --- helpers that work directly in Word Ranges ---
         private void ReplaceFirstInRange(Word.Document doc, string search, string replace)
         {
             Word.Range rng = doc.Content;
@@ -1057,9 +978,6 @@ namespace AbbreviationWordAddin
                 System.Diagnostics.Debug.WriteLine("Error replacing abbreviation: " + ex.Message);
             }
         }
-
-
-
 
 
 
@@ -1305,19 +1223,6 @@ namespace AbbreviationWordAddin
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         //public void HighlightAllAbbreviations()
         //{
         //    if (!isAbbreviationEnabled) return;
@@ -1505,9 +1410,6 @@ namespace AbbreviationWordAddin
 
 
 
-
-
-
         /// <summary>
         /// Event: User typed text in the pane input box.
         /// </summary>
@@ -1679,16 +1581,6 @@ namespace AbbreviationWordAddin
             //    isReplacing = false;
             //}
         }
-
-
-
-
-
-
-
-
-
-
 
 
 
