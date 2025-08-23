@@ -1515,49 +1515,62 @@ namespace AbbreviationWordAddin
                                                      .OrderByDescending(p => p.Length)
                                                      .ToList();
 
-                    // Get full document text once
-                    string docText = null;
-                    syncContext.Send(_ => docText = doc.Content.Text, null);
-
-                    // Regex to find all matches in the string
+                    // Build regex once
                     string pattern = string.Join("|", phrases.Select(Regex.Escape));
                     Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                    var matches = regex.Matches(docText);
 
-                    debugLog.AppendLine($"Total matches found: {matches.Count}");
-                    int totalMatches = matches.Count;
+                    // Count total matches for progress bar
+                    int totalMatches = 0;
+                    syncContext.Send(_ =>
+                    {
+                        foreach (Word.Paragraph para in doc.Paragraphs)
+                        {
+                            string paraText = para.Range.Text;
+                            if (!string.IsNullOrWhiteSpace(paraText))
+                                totalMatches += regex.Matches(paraText).Count;
+                        }
+                    }, null);
+
+                    debugLog.AppendLine($"Total matches found: {totalMatches}");
                     int processed = 0;
 
-                    // Highlight in batches to avoid freezing
-                    foreach (Match match in matches)
+                    // Highlight paragraph by paragraph
+                    foreach (Word.Paragraph para in doc.Paragraphs)
                     {
-                        processed++;
-                        int percentage = (processed * 100) / totalMatches;
+                        string paraText = para.Range.Text;
+                        if (string.IsNullOrWhiteSpace(paraText)) continue;
 
-                        syncContext.Send(_ =>
+                        var matches = regex.Matches(paraText);
+                        foreach (Match match in matches)
                         {
-                            try
+                            processed++;
+                            int percentage = (processed * 100) / (totalMatches == 0 ? 1 : totalMatches);
+
+                            syncContext.Send(_ =>
                             {
-                                int start = doc.Content.Start + match.Index;
-                                int end = start + match.Length;
+                                try
+                                {
+                                    int start = para.Range.Start + match.Index;
+                                    int end = start + match.Length;
 
-                                if (end > doc.Content.End)
-                                    end = doc.Content.End;
+                                    if (end > para.Range.End)
+                                        end = para.Range.End;
 
-                                Word.Range range = doc.Range(start, end);
-                                range.Font.Color = Word.WdColor.wdColorRed;
+                                    Word.Range range = doc.Range(start, end);
+                                    range.Font.Color = Word.WdColor.wdColorRed;
+                                    System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
+                                }
+                                catch (Exception ex)
+                                {
+                                    debugLog.AppendLine($"Error highlighting '{match.Value}': {ex.Message}");
+                                }
 
-                                System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
-                            }
-                            catch (Exception ex)
-                            {
-                                debugLog.AppendLine($"Error highlighting '{match.Value}': {ex.Message}");
-                            }
+                                progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
+                            }, null);
+                        }
 
-                            progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
-                        }, null);
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(para);
                     }
-
                 }
                 catch (Exception ex)
                 {
@@ -1573,9 +1586,9 @@ namespace AbbreviationWordAddin
                         this.Application.Options.ReplaceSelection = true;
                         this.Application.Visible = true;
 
-                        // Show debug log in a new document
-                        Word.Document debugDoc = this.Application.Documents.Add();
-                        debugDoc.Content.Text = debugLog.ToString();
+                        //// Show debug log in a new document
+                        //Word.Document debugDoc = this.Application.Documents.Add();
+                        //debugDoc.Content.Text = debugLog.ToString();
                     }, null);
 
                     syncContext.Post(_ => progressForm.Close(), null);
@@ -1584,8 +1597,8 @@ namespace AbbreviationWordAddin
 
             highlightThread.Start();
             progressForm.ShowDialog();
-
         }
+
 
 
 
