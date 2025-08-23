@@ -145,7 +145,10 @@ namespace AbbreviationWordAddin
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentChange += Application_DocumentChange;
 
-                EnsureTaskPaneVisible(this.Application.ActiveWindow, "Statup");
+                if (this.Application.Documents.Count > 0 && this.Application.ActiveWindow != null)
+                {
+                    EnsureTaskPaneVisible(this.Application.ActiveWindow, "Startup");
+                }
 
 
             }
