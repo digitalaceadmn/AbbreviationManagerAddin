@@ -1656,7 +1656,14 @@ namespace AbbreviationWordAddin
                     if (testRange.Start == 0) break;
 
                     testRange.MoveStart(Word.WdUnits.wdWord, -1);
-                    string candidate = testRange.Text.Trim();
+                    string candidate = testRange.Text;
+                    if (string.IsNullOrEmpty(candidate))
+                    {
+                        wordsChecked++;
+                        continue;
+                    }
+
+                    candidate = candidate.Trim();
 
                     if (candidate.Contains("\r") || candidate.Contains("\n"))
                     {
