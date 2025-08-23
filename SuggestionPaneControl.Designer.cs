@@ -106,7 +106,7 @@ namespace AbbreviationWordAddin
             this.tabPageReverse.Controls.Add(this.listViewReverse);
             this.tabPageReverse.Location = new System.Drawing.Point(4, 25);
             this.tabPageReverse.Name = "tabPageReverse";
-            this.tabPageReverse.Size = new System.Drawing.Size(636, 511);
+            this.tabPageReverse.Size = new System.Drawing.Size(979, 511);
             this.tabPageReverse.TabIndex = 1;
             this.tabPageReverse.Text = "Reverse Abbreviations";
             // 
@@ -117,7 +117,7 @@ namespace AbbreviationWordAddin
             this.listViewReverse.HideSelection = false;
             this.listViewReverse.Location = new System.Drawing.Point(0, 0);
             this.listViewReverse.Name = "listViewReverse";
-            this.listViewReverse.Size = new System.Drawing.Size(636, 511);
+            this.listViewReverse.Size = new System.Drawing.Size(979, 511);
             this.listViewReverse.TabIndex = 0;
             this.listViewReverse.UseCompatibleStateImageBehavior = false;
             // 
@@ -126,7 +126,7 @@ namespace AbbreviationWordAddin
             this.tabPageDictionary.Controls.Add(this.listViewDictionary);
             this.tabPageDictionary.Location = new System.Drawing.Point(4, 25);
             this.tabPageDictionary.Name = "tabPageDictionary";
-            this.tabPageDictionary.Size = new System.Drawing.Size(636, 511);
+            this.tabPageDictionary.Size = new System.Drawing.Size(979, 511);
             this.tabPageDictionary.TabIndex = 2;
             this.tabPageDictionary.Text = "Dictionary";
             // 
@@ -137,7 +137,7 @@ namespace AbbreviationWordAddin
             this.listViewDictionary.HideSelection = false;
             this.listViewDictionary.Location = new System.Drawing.Point(0, 0);
             this.listViewDictionary.Name = "listViewDictionary";
-            this.listViewDictionary.Size = new System.Drawing.Size(636, 511);
+            this.listViewDictionary.Size = new System.Drawing.Size(979, 511);
             this.listViewDictionary.TabIndex = 0;
             this.listViewDictionary.UseCompatibleStateImageBehavior = false;
             // 

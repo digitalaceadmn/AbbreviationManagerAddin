@@ -159,7 +159,20 @@ namespace AbbreviationWordAddin
         private void ShowSuggestions_Click(object sender, RibbonControlEventArgs e)
         {
             var window = Globals.ThisAddIn.Application.ActiveWindow;
-            Globals.ThisAddIn.EnsureTaskPaneVisible(window);
+            if (window == null) return;
+
+            // Get the pane (create if doesn't exist)
+            var control = Globals.ThisAddIn.EnsureTaskPaneVisible(window, "Show Suggestion BTN");
+            if (control == null) return;
+
+            // Get the CustomTaskPane object
+            if (Globals.ThisAddIn.taskPanes.TryGetValue(window, out var pane))
+            {
+                pane.Visible = true; // show the pane
+                                     // Optional: remove from "user closed" so it can reopen via debouncer later
+                Globals.ThisAddIn.userClosedTaskPanes.Remove(window);
+            }
         }
+
     }
 }

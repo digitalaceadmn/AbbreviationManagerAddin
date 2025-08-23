@@ -204,18 +204,9 @@ namespace AbbreviationWordAddin
                             }
                         }
 
-                        string entryList = "";
-                        foreach (var dict in abbreviationDict)
-                        {
-                            entryList += $"{dict.Key} => {dict.Value}\n";
-                        }
+                      
 
-                        System.Windows.Forms.MessageBox.Show(
-                            entryList,
-                            "Abbreviation Dictionary Loaded",
-                            System.Windows.Forms.MessageBoxButtons.OK,
-                            System.Windows.Forms.MessageBoxIcon.Information
-                        );
+                       
                     }
                 }
             }

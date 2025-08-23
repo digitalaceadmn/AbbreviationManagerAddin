@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Action = System.Action;
 using Office = Microsoft.Office.Core;
 using Word = Microsoft.Office.Interop.Word;
@@ -48,8 +49,9 @@ namespace AbbreviationWordAddin
         bool ignoreAllChosen = false;
         private bool replaceAllForPhrase;
         private bool ignoreAllForPhrase;
-        private Dictionary<Word.Window, CustomTaskPane> taskPanes = new Dictionary<Word.Window, CustomTaskPane>();
-        private HashSet<Word.Window> userClosedTaskPanes = new HashSet<Word.Window>();
+        public Dictionary<Word.Window, CustomTaskPane> taskPanes = new Dictionary<Word.Window, CustomTaskPane>();
+        public HashSet<Word.Window> userClosedTaskPanes = new HashSet<Word.Window>();
+        public HashSet<Word.Window> taskPaneOpenedOnce = new HashSet<Word.Window>();
 
         private void TrackTaskPaneVisibility(CustomTaskPane pane, Word.Window window)
         {
@@ -58,13 +60,18 @@ namespace AbbreviationWordAddin
                 if (!pane.Visible)
                 {
                     userClosedTaskPanes.Add(window);
+                    taskPaneOpenedOnce.Remove(window); // allow future reopen if needed
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] User closed TaskPane.");
                 }
                 else
                 {
-                    userClosedTaskPanes.Remove(window); 
+                    userClosedTaskPanes.Remove(window);
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] TaskPane shown.");
                 }
             };
         }
+
+
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -138,7 +145,7 @@ namespace AbbreviationWordAddin
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentChange += Application_DocumentChange;
 
-                EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                EnsureTaskPaneVisible(this.Application.ActiveWindow, "Statup");
 
 
             }
@@ -166,7 +173,7 @@ namespace AbbreviationWordAddin
             {
                 MessageBox.Show("New document created. Name: " + Doc.Name, "Debug - NewDocument");
 
-                EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                EnsureTaskPaneVisible(this.Application.ActiveWindow, "New Documnet");
 
                 // Debug: Show how many phrases we currently have
                 var phrases = AbbreviationManager.GetAllPhrases();
@@ -190,7 +197,7 @@ namespace AbbreviationWordAddin
 
         private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
         {
-            EnsureTaskPaneVisible(Wn);
+            EnsureTaskPaneVisible(Wn,"windowActivate");
         }
 
         private void Application_DocumentChange()
@@ -827,51 +834,44 @@ namespace AbbreviationWordAddin
 
 
 
-        public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window)
+        public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window, string from)
         {
             if (window == null || this.Application.Documents.Count == 0)
                 return null;
 
-            // Check if a pane already exists for this window
+            // Skip if user manually closed
+            if (userClosedTaskPanes.Contains(window))
+                return null;
+
+            // Check if pane already exists
             if (taskPanes.TryGetValue(window, out var existingPane))
-            {
-                if (!existingPane.Visible && !userClosedTaskPanes.Contains(window))
-                    existingPane.Visible = true;
-
                 return existingPane.Control as SuggestionPaneControl;
-            }
 
-            // Look for existing pane in CustomTaskPanes collection
+            // Check CustomTaskPanes collection
             foreach (CustomTaskPane pane in this.CustomTaskPanes)
             {
                 if (pane.Window == window && pane.Title == "Abbreviation Suggestions")
                 {
                     taskPanes[window] = pane;
-
-                    if (!userClosedTaskPanes.Contains(window))
-                        pane.Visible = true;
-
                     return pane.Control as SuggestionPaneControl;
                 }
             }
 
-            // Only create a new pane if the user hasn't closed one
-            if (userClosedTaskPanes.Contains(window))
-                return null;
-
+            // Create a new pane
             var control = new SuggestionPaneControl();
             control.OnTextChanged += SuggestionPaneControl_OnTextChanged;
             control.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
 
             var newPane = this.CustomTaskPanes.Add(control, "Abbreviation Suggestions", window);
             newPane.Width = 500;
-            newPane.Visible = true;
             taskPanes[window] = newPane;
 
             TrackTaskPaneVisibility(newPane, window);
 
+            // Do NOT set Visible = true here — leave it to the caller
             return control;
         }
+
 
 
 
@@ -885,7 +885,7 @@ namespace AbbreviationWordAddin
                 Word.Window activeWindow = this.Application.ActiveWindow;
 
                 // Rename variable to avoid conflict
-                var paneControl = EnsureTaskPaneVisible(activeWindow); // was 'control'
+                var paneControl = EnsureTaskPaneVisible(activeWindow, "Replace ALL"); // was 'control'
 
                 if (paneControl == null)
                 {
@@ -1420,7 +1420,7 @@ namespace AbbreviationWordAddin
                 frozeSuggestions = false;
 
                 // Get the SuggestionPaneControl for the active window
-                var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow);
+                var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow, "onTextChanges");
                 if (currentControl == null) return;
 
                 List<(string Word, string Replacement)> matches;
@@ -1610,24 +1610,47 @@ namespace AbbreviationWordAddin
         {
             debounceTimer.Stop();
 
-            if (this.Application.Documents.Count == 0)
+            if (this.Application.Documents.Count == 0 || !isAbbreviationEnabled)
                 return;
 
-            if (!isAbbreviationEnabled) return;
+            var window = this.Application.ActiveWindow;
+            if (window == null) return;
+
+            SuggestionPaneControl currentControl = null;
+
+            // Only open TaskPane once if user hasn't closed it
+            if (!userClosedTaskPanes.Contains(window) && !taskPaneOpenedOnce.Contains(window))
+            {
+                currentControl = EnsureTaskPaneVisible(window, "Debouncer");
+                if (currentControl != null)
+                {
+                    var pane = taskPanes[window];
+                    pane.Visible = true; // show it **only once**
+                    taskPaneOpenedOnce.Add(window);
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] TaskPane opened by Debouncer.");
+                }
+            }
+            else
+            {
+                // Pane already exists, get reference without showing
+                taskPanes.TryGetValue(window, out var pane);
+                currentControl = pane?.Control as SuggestionPaneControl;
+            }
 
             try
             {
-                var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow);
-                if (currentControl == null) return;
+                if (userClosedTaskPanes.Contains(window) || currentControl == null)
+                    return;
 
                 Word.Selection sel = this.Application.Selection;
                 if (sel?.Range == null) return;
 
                 Word.Range selRange = sel.Range.Duplicate;
 
-                // Examine up to maxPhraseLength words backward, but stop at line break
+                // --- existing logic for suggestions ---
                 int wordsChecked = 0;
                 Word.Range testRange = selRange.Duplicate;
+
                 while (wordsChecked < maxPhraseLength)
                 {
                     if (testRange.Start == 0) break;
@@ -1635,10 +1658,9 @@ namespace AbbreviationWordAddin
                     testRange.MoveStart(Word.WdUnits.wdWord, -1);
                     string candidate = testRange.Text.Trim();
 
-                    // Stop if we cross a newline
                     if (candidate.Contains("\r") || candidate.Contains("\n"))
                     {
-                        testRange.MoveStart(Word.WdUnits.wdWord, 1); // move back to exclude newline
+                        testRange.MoveStart(Word.WdUnits.wdWord, 1);
                         break;
                     }
 
@@ -1648,14 +1670,12 @@ namespace AbbreviationWordAddin
                         continue;
                     }
 
-                    // Skip if too short or reverse mode
                     if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse || candidate.Length < 3)
                     {
                         wordsChecked++;
                         continue;
                     }
 
-                    // Skip recently undone words
                     if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase) &&
@@ -1683,18 +1703,14 @@ namespace AbbreviationWordAddin
                         continue;
                     }
 
-                    bool hasExact = matches.Any(p =>
-                        string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
-
-                    bool hasLonger = matches.Any(p =>
-                        p.Word.Split(' ').Length > candidate.Split(' ').Length);
+                    bool hasExact = matches.Any(p => string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
+                    bool hasLonger = matches.Any(p => p.Word.Split(' ').Length > candidate.Split(' ').Length);
 
                     if (hasExact && !hasLonger)
                     {
                         if (IsLastCharSpace(sel))
                         {
                             ReplaceWithFullForm(candidate, testRange, sel);
-
                             lastReplacedShortForm = candidate;
                             lastReplacedFullForm = GetFullFormFor(candidate);
                             lastUndoneWord = null;
