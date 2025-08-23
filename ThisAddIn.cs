@@ -120,6 +120,7 @@ namespace AbbreviationWordAddin
                 ((Word.ApplicationEvents4_Event)this.Application).NewDocument += Application_NewDocument;
                 ((Word.ApplicationEvents4_Event)this.Application).DocumentOpen += Application_DocumentOpen;
                 ((Word.ApplicationEvents4_Event)this.Application).WindowActivate += Application_WindowActivate;
+                ((Word.ApplicationEvents4_Event)this.Application).DocumentChange += Application_DocumentChange;
 
                 EnsureTaskPaneVisible(this.Application.ActiveWindow);
 
@@ -173,6 +174,20 @@ namespace AbbreviationWordAddin
         private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
         {
             EnsureTaskPaneVisible(Wn);
+        }
+
+        private void Application_DocumentChange()
+        {
+            if (this.Application.Documents.Count == 0)
+            {
+                typingTimer?.Stop();
+                debounceTimer?.Stop();
+            }
+            else
+            {
+                typingTimer?.Start();
+                debounceTimer?.Start();
+            }
         }
 
         //public void EnsureTaskPaneVisible(Word.Window window)
@@ -951,6 +966,10 @@ namespace AbbreviationWordAddin
 
         public SuggestionPaneControl EnsureTaskPaneVisible(Word.Window window)
         {
+            // Safeguard against null window or no open documents
+            if (window == null || this.Application.Documents.Count == 0)
+                return null;
+
             if (taskPanes.TryGetValue(window, out var existingPane))
             {
                 if (existingPane != null && !existingPane.Visible)
@@ -985,6 +1004,7 @@ namespace AbbreviationWordAddin
             taskPanes[window] = newPane;
             return control;
         }
+
 
 
 
@@ -1368,6 +1388,99 @@ namespace AbbreviationWordAddin
         //    }
         //}
 
+        //public void HighlightAllAbbreviations()
+        //{
+        //    if (!isAbbreviationEnabled) return;
+
+        //    var progressForm = new ProgressForm();
+        //    var syncContext = System.Threading.SynchronizationContext.Current;
+        //    Exception processError = null;
+
+        //    var highlightThread = new System.Threading.Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            Word.Document doc = null;
+        //            syncContext.Send(_ =>
+        //            {
+        //                doc = this.Application.ActiveDocument;
+        //                this.Application.ScreenUpdating = false;
+        //                this.Application.DisplayStatusBar = false;
+        //                this.Application.Options.ReplaceSelection = false;
+        //            }, null);
+
+        //            if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
+        //            {
+        //                syncContext.Send(_ =>
+        //                {
+        //                    AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+        //                }, null);
+        //            }
+
+        //            var phrases = AbbreviationManager.GetAllPhrases()
+        //                                             .OrderByDescending(p => p.Length)
+        //                                             .ToList();
+
+        //            // Build one combined regex
+        //            string pattern = string.Join("|", phrases.Select(p => $@"(?<!\w){Regex.Escape(p)}(?!\w)"));
+        //            Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        //            string docText = null;
+        //            syncContext.Send(_ => docText = doc.Content.Text, null);
+
+        //            var matches = regex.Matches(docText);
+        //            int totalMatches = matches.Count;
+        //            int processed = 0;
+
+        //            foreach (Match match in matches)
+        //            {
+        //                processed++;
+        //                int percentage = (processed * 100) / totalMatches;
+        //                progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
+
+        //                int start = match.Index + 1; // Word ranges are 1-based
+        //                int end = start + match.Length - 1;
+
+        //                syncContext.Send(_ =>
+        //                {
+        //                    Word.Range range = doc.Range(start, end);
+        //                    range.Font.Color = Word.WdColor.wdColorRed;
+        //                    System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
+        //                }, null);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            processError = ex;
+        //        }
+        //        finally
+        //        {
+        //            syncContext.Send(_ =>
+        //            {
+        //                this.Application.ScreenUpdating = true;
+        //                this.Application.DisplayStatusBar = true;
+        //                this.Application.Options.ReplaceSelection = true;
+        //                this.Application.Visible = true;
+        //            }, null);
+
+        //            syncContext.Post(_ => progressForm.Close(), null);
+        //        }
+        //    });
+
+        //    highlightThread.Start();
+        //    progressForm.ShowDialog();
+
+        //    if (processError != null)
+        //    {
+        //        System.Windows.Forms.MessageBox.Show(
+        //            "Error during highlighting: " + processError.Message,
+        //            "Error",
+        //            System.Windows.Forms.MessageBoxButtons.OK,
+        //            System.Windows.Forms.MessageBoxIcon.Error
+        //        );
+        //    }
+        //}
+
         public void HighlightAllAbbreviations()
         {
             if (!isAbbreviationEnabled) return;
@@ -1375,6 +1488,7 @@ namespace AbbreviationWordAddin
             var progressForm = new ProgressForm();
             var syncContext = System.Threading.SynchronizationContext.Current;
             Exception processError = null;
+            var debugLog = new System.Text.StringBuilder();
 
             var highlightThread = new System.Threading.Thread(() =>
             {
@@ -1401,37 +1515,54 @@ namespace AbbreviationWordAddin
                                                      .OrderByDescending(p => p.Length)
                                                      .ToList();
 
-                    // Build one combined regex
-                    string pattern = string.Join("|", phrases.Select(Regex.Escape));
-                    Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
-
+                    // Get full document text once
                     string docText = null;
                     syncContext.Send(_ => docText = doc.Content.Text, null);
 
+                    // Regex to find all matches in the string
+                    string pattern = string.Join("|", phrases.Select(Regex.Escape));
+                    Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                     var matches = regex.Matches(docText);
+
+                    debugLog.AppendLine($"Total matches found: {matches.Count}");
                     int totalMatches = matches.Count;
                     int processed = 0;
 
+                    // Highlight in batches to avoid freezing
                     foreach (Match match in matches)
                     {
                         processed++;
                         int percentage = (processed * 100) / totalMatches;
-                        progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
-
-                        int start = match.Index + 1; // Word ranges are 1-based
-                        int end = start + match.Length - 1;
 
                         syncContext.Send(_ =>
                         {
-                            Word.Range range = doc.Range(start, end);
-                            range.Font.Color = Word.WdColor.wdColorRed;
-                            System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
+                            try
+                            {
+                                int start = doc.Content.Start + match.Index;
+                                int end = start + match.Length;
+
+                                if (end > doc.Content.End)
+                                    end = doc.Content.End;
+
+                                Word.Range range = doc.Range(start, end);
+                                range.Font.Color = Word.WdColor.wdColorRed;
+
+                                System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
+                            }
+                            catch (Exception ex)
+                            {
+                                debugLog.AppendLine($"Error highlighting '{match.Value}': {ex.Message}");
+                            }
+
+                            progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
                         }, null);
                     }
+
                 }
                 catch (Exception ex)
                 {
                     processError = ex;
+                    debugLog.AppendLine("❌ Exception: " + ex.ToString());
                 }
                 finally
                 {
@@ -1441,6 +1572,10 @@ namespace AbbreviationWordAddin
                         this.Application.DisplayStatusBar = true;
                         this.Application.Options.ReplaceSelection = true;
                         this.Application.Visible = true;
+
+                        // Show debug log in a new document
+                        Word.Document debugDoc = this.Application.Documents.Add();
+                        debugDoc.Content.Text = debugLog.ToString();
                     }, null);
 
                     syncContext.Post(_ => progressForm.Close(), null);
@@ -1450,16 +1585,13 @@ namespace AbbreviationWordAddin
             highlightThread.Start();
             progressForm.ShowDialog();
 
-            if (processError != null)
-            {
-                System.Windows.Forms.MessageBox.Show(
-                    "Error during highlighting: " + processError.Message,
-                    "Error",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Error
-                );
-            }
         }
+
+
+
+
+
+
 
 
 
@@ -1867,6 +1999,9 @@ namespace AbbreviationWordAddin
         private void DebounceTimer_Tick(object sender, EventArgs e)
         {
             debounceTimer.Stop();
+
+            if (this.Application.Documents.Count == 0)
+                return;
 
             if (!isAbbreviationEnabled) return;
 

@@ -31,10 +31,10 @@
     <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
     <IsWebBootstrapper>False</IsWebBootstrapper>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <PublishUrl>D:\add-in\</PublishUrl>
+    <PublishUrl>D:\add-in\WithCert\</PublishUrl>
     <InstallUrl />
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.85</ApplicationVersion>
+    <ApplicationVersion>1.0.0.86</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -302,6 +302,7 @@
     <EmbeddedResource Include="Abbreviations.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <None Include="Abbreviation.pfx" />
     <None Include="AbbreviationWordAddin_TemporaryKey.pfx" />
     <None Include="app.config" />
     <None Include="packages.config" />
@@ -386,11 +387,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>
-    </ManifestKeyFile>
+    <ManifestKeyFile>Abbreviation.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>08E76FFF7FEB83E9DFD026933E629950459A9602</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>26C4413584FB74155CC9CF25FED45216905FFFE6</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
