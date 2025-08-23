@@ -274,7 +274,7 @@ namespace AbbreviationWordAddin
             // 
             // btnWarningOrder
             // 
-            this.btnWarningOrder.Label = "Warning Order";
+            this.btnWarningOrder.Label = "Key Features (JSSD)";
             this.btnWarningOrder.Name = "btnWarningOrder";
             this.btnWarningOrder.ShowImage = true;
             this.btnWarningOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
@@ -413,7 +413,7 @@ namespace AbbreviationWordAddin
 
         private void btnWarningOrder_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Warning Order.docx", "Warning Order.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Key Features (JSSD).docx", "Key Features (JSSD).docx");
             InsertTemplate(templatePath);
         }
 
