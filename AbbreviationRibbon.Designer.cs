@@ -55,6 +55,7 @@ namespace AbbreviationWordAddin
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AbbreviationRibbon));
             this.tab1 = this.Factory.CreateRibbonTab();
             this.AppxC = this.Factory.CreateRibbonTab();
             this.group2 = this.Factory.CreateRibbonGroup();
@@ -63,6 +64,7 @@ namespace AbbreviationWordAddin
             this.group1 = this.Factory.CreateRibbonGroup();
             this.btnReplaceAll = this.Factory.CreateRibbonButton();
             this.btnHighlightAll = this.Factory.CreateRibbonButton();
+            this.highLightLike = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
             this.menuTemplates = this.Factory.CreateRibbonMenu();
             this.btnGeneralFormat = this.Factory.CreateRibbonButton();
@@ -82,12 +84,19 @@ namespace AbbreviationWordAddin
             this.btnOpOrder = this.Factory.CreateRibbonButton();
             this.btnWarningOrder = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.group4 = this.Factory.CreateRibbonGroup();
+            this.button2 = this.Factory.CreateRibbonButton();
             this.btnCaseStudy = this.Factory.CreateRibbonButton();
+            this.separator1 = this.Factory.CreateRibbonSeparator();
+            this.separator2 = this.Factory.CreateRibbonSeparator();
+            this.separator3 = this.Factory.CreateRibbonSeparator();
+            this.separator4 = this.Factory.CreateRibbonSeparator();
             this.tab1.SuspendLayout();
             this.AppxC.SuspendLayout();
             this.group2.SuspendLayout();
             this.group1.SuspendLayout();
             this.group3.SuspendLayout();
+            this.group4.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -101,53 +110,85 @@ namespace AbbreviationWordAddin
             this.AppxC.Groups.Add(this.group2);
             this.AppxC.Groups.Add(this.group1);
             this.AppxC.Groups.Add(this.group3);
+            this.AppxC.Groups.Add(this.group4);
             this.AppxC.Label = "JSSD";
             this.AppxC.Name = "AppxC";
             // 
             // group2
             // 
             this.group2.Items.Add(this.btnEnable);
+            this.group2.Items.Add(this.separator1);
             this.group2.Items.Add(this.btnDisable);
+            this.group2.Label = "Enable / Disable";
             this.group2.Name = "group2";
             // 
             // btnEnable
             // 
+            this.btnEnable.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnEnable.Image = ((System.Drawing.Image)(resources.GetObject("btnEnable.Image")));
             this.btnEnable.Label = "Enable Abbreviation";
             this.btnEnable.Name = "btnEnable";
+            this.btnEnable.ShowImage = true;
             this.btnEnable.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEnable_Click);
             // 
             // btnDisable
             // 
+            this.btnDisable.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnDisable.Image = ((System.Drawing.Image)(resources.GetObject("btnDisable.Image")));
             this.btnDisable.Label = "Disable Abbreviation";
             this.btnDisable.Name = "btnDisable";
+            this.btnDisable.ShowImage = true;
             this.btnDisable.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDisable_Click);
             // 
             // group1
             // 
             this.group1.Items.Add(this.btnReplaceAll);
+            this.group1.Items.Add(this.separator2);
             this.group1.Items.Add(this.btnHighlightAll);
+            this.group1.Items.Add(this.separator3);
+            this.group1.Items.Add(this.highLightLike);
+            this.group1.Label = "Replace / Highlight";
             this.group1.Name = "group1";
             // 
             // btnReplaceAll
             // 
+            this.btnReplaceAll.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnReplaceAll.Image = ((System.Drawing.Image)(resources.GetObject("btnReplaceAll.Image")));
             this.btnReplaceAll.Label = "Replace All";
             this.btnReplaceAll.Name = "btnReplaceAll";
+            this.btnReplaceAll.ShowImage = true;
             this.btnReplaceAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnReplaceAll_Click);
             // 
             // btnHighlightAll
             // 
+            this.btnHighlightAll.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnHighlightAll.Image = ((System.Drawing.Image)(resources.GetObject("btnHighlightAll.Image")));
             this.btnHighlightAll.Label = "Highlight All";
             this.btnHighlightAll.Name = "btnHighlightAll";
+            this.btnHighlightAll.ShowImage = true;
             this.btnHighlightAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnHighlightAll_Click);
+            // 
+            // highLightLike
+            // 
+            this.highLightLike.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.highLightLike.Image = ((System.Drawing.Image)(resources.GetObject("highLightLike.Image")));
+            this.highLightLike.Label = "Highlight Like";
+            this.highLightLike.Name = "highLightLike";
+            this.highLightLike.ShowImage = true;
+            this.highLightLike.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.highLightLike_Click);
             // 
             // group3
             // 
             this.group3.Items.Add(this.menuTemplates);
+            this.group3.Items.Add(this.separator4);
             this.group3.Items.Add(this.button1);
+            this.group3.Label = "Template / Show Suggestions";
             this.group3.Name = "group3";
             // 
             // menuTemplates
             // 
+            this.menuTemplates.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.menuTemplates.Image = ((System.Drawing.Image)(resources.GetObject("menuTemplates.Image")));
             this.menuTemplates.Items.Add(this.btnGeneralFormat);
             this.menuTemplates.Items.Add(this.btnDoLetter);
             this.menuTemplates.Items.Add(this.btnNotingSheet);
@@ -166,6 +207,7 @@ namespace AbbreviationWordAddin
             this.menuTemplates.Items.Add(this.btnWarningOrder);
             this.menuTemplates.Label = "Template";
             this.menuTemplates.Name = "menuTemplates";
+            this.menuTemplates.ShowImage = true;
             // 
             // btnGeneralFormat
             // 
@@ -281,9 +323,27 @@ namespace AbbreviationWordAddin
             // 
             // button1
             // 
+            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
             this.button1.Label = "Show Suggestions";
             this.button1.Name = "button1";
+            this.button1.ShowImage = true;
             this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ShowSuggestions_Click);
+            // 
+            // group4
+            // 
+            this.group4.Items.Add(this.button2);
+            this.group4.Label = "Help";
+            this.group4.Name = "group4";
+            // 
+            // button2
+            // 
+            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button2.Image = ((System.Drawing.Image)(resources.GetObject("button2.Image")));
+            this.button2.Label = "Help";
+            this.button2.Name = "button2";
+            this.button2.ShowImage = true;
+            this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
             // 
             // btnCaseStudy
             // 
@@ -291,6 +351,22 @@ namespace AbbreviationWordAddin
             this.btnCaseStudy.Name = "btnCaseStudy";
             this.btnCaseStudy.ShowImage = true;
             this.btnCaseStudy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
+            // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
+            // separator2
+            // 
+            this.separator2.Name = "separator2";
+            // 
+            // separator3
+            // 
+            this.separator3.Name = "separator3";
+            // 
+            // separator4
+            // 
+            this.separator4.Name = "separator4";
             // 
             // AbbreviationRibbon
             // 
@@ -309,6 +385,8 @@ namespace AbbreviationWordAddin
             this.group1.PerformLayout();
             this.group3.ResumeLayout(false);
             this.group3.PerformLayout();
+            this.group4.ResumeLayout(false);
+            this.group4.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -502,6 +580,13 @@ namespace AbbreviationWordAddin
         internal RibbonButton button1;
         internal RibbonGroup group1;
         internal RibbonGroup group3;
+        internal RibbonGroup group4;
+        internal RibbonButton button2;
+        internal RibbonButton highLightLike;
+        internal RibbonSeparator separator1;
+        internal RibbonSeparator separator2;
+        internal RibbonSeparator separator3;
+        internal RibbonSeparator separator4;
     }
 
     partial class ThisRibbonCollection

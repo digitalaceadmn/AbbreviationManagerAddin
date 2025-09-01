@@ -1226,6 +1226,124 @@ namespace AbbreviationWordAddin
         }
 
 
+        public void HighlightLike()
+        {
+            if (!isAbbreviationEnabled) return;
+
+            var progressForm = new ProgressForm();
+            var syncContext = System.Threading.SynchronizationContext.Current;
+            Exception processError = null;
+            var debugLog = new System.Text.StringBuilder();
+
+            var highlightThread = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    Word.Document doc = null;
+                    syncContext.Send(_ =>
+                    {
+                        doc = this.Application.ActiveDocument;
+                        this.Application.ScreenUpdating = false;
+                        this.Application.DisplayStatusBar = false;
+                        this.Application.Options.ReplaceSelection = false;
+                    }, null);
+
+                    if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
+                    {
+                        syncContext.Send(_ =>
+                        {
+                            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+                        }, null);
+                    }
+
+                    var phrases = AbbreviationManager.GetAllPhrases()
+                                                     .OrderByDescending(p => p.Length)
+                                                     .ToList();
+
+                    // ✅ Build regex for substring (no word boundaries, just escape phrases)
+                    string pattern = string.Join("|", phrases.Select(Regex.Escape));
+                    Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                    // Count total matches
+                    int totalMatches = 0;
+                    syncContext.Send(_ =>
+                    {
+                        foreach (Word.Paragraph para in doc.Paragraphs)
+                        {
+                            string paraText = para.Range.Text;
+                            if (!string.IsNullOrWhiteSpace(paraText))
+                                totalMatches += regex.Matches(paraText).Count;
+                        }
+                    }, null);
+
+                    debugLog.AppendLine($"Total matches found: {totalMatches}");
+                    int processed = 0;
+
+                    foreach (Word.Paragraph para in doc.Paragraphs)
+                    {
+                        string paraText = para.Range.Text;
+                        if (string.IsNullOrWhiteSpace(paraText)) continue;
+
+                        var matches = regex.Matches(paraText);
+                        foreach (Match match in matches)
+                        {
+                            processed++;
+                            int percentage = (processed * 100) / (totalMatches == 0 ? 1 : totalMatches);
+
+                            syncContext.Send(_ =>
+                            {
+                                try
+                                {
+                                    int start = para.Range.Start + match.Index;
+                                    int end = start + match.Length;
+
+                                    if (end > para.Range.End)
+                                        end = para.Range.End;
+
+                                    Word.Range range = doc.Range(start, end);
+
+                                    // ✅ Instead of font color, apply real highlight
+                                    range.HighlightColorIndex = Word.WdColorIndex.wdYellow;
+
+                                    System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
+                                }
+                                catch (Exception ex)
+                                {
+                                    debugLog.AppendLine($"Error highlighting '{match.Value}': {ex.Message}");
+                                }
+
+                                progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
+                            }, null);
+                        }
+
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(para);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    processError = ex;
+                    debugLog.AppendLine("❌ Exception: " + ex.ToString());
+                }
+                finally
+                {
+                    syncContext.Send(_ =>
+                    {
+                        this.Application.ScreenUpdating = true;
+                        this.Application.DisplayStatusBar = true;
+                        this.Application.Options.ReplaceSelection = true;
+                        this.Application.Visible = true;
+                    }, null);
+
+                    syncContext.Post(_ => progressForm.Close(), null);
+                }
+            });
+
+            highlightThread.Start();
+            progressForm.ShowDialog();
+        }
+
+
+
         //public void HighlightAllAbbreviations()
         //{
         //    if (!isAbbreviationEnabled) return;

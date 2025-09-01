@@ -1,8 +1,10 @@
-﻿﻿using System;
-using Microsoft.Office.Interop.Word;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using Microsoft.Office.Interop.Word;
 using Microsoft.Office.Tools.Ribbon;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace AbbreviationWordAddin
 {
@@ -11,27 +13,25 @@ namespace AbbreviationWordAddin
        
         private void AbbreviationRibbon_Load(object sender, RibbonUIEventArgs e)
         {
-            // Check if the abbreviation replacement is enabled
             var application = Globals.ThisAddIn.Application;
             AutoCorrect autoCorrect = application.AutoCorrect;
             if (autoCorrect.ReplaceText)
             {
-                // Initialize cache on load if enabled
                 AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
 
                 Globals.ThisAddIn.ToggleAbbreviationReplacement(true);
-                btnEnable.Enabled = false;  // Disable enable button
-                btnDisable.Enabled = true;  // Enable disable button
-                btnEnable.Label = "Enabled Abbreviations"; // Change text to indicate it's enabled
-                btnDisable.Label = "Disable Abbreviations"; // Reset disable button text
+                btnEnable.Enabled = false;  
+                btnDisable.Enabled = true; 
+                btnEnable.Label = "Enabled Abbreviations"; 
+                btnDisable.Label = "Disable Abbreviations";
             }
             else
             {
                 Globals.ThisAddIn.ToggleAbbreviationReplacement(false);
-                btnEnable.Enabled = true;  // Enable enable button
-                btnDisable.Enabled = false; // Disable disable button
-                btnDisable.Label = "Disabled"; // Change text to indicate it's disabled
-                btnEnable.Label = "Enable"; // Reset enable button text
+                btnEnable.Enabled = true;  
+                btnDisable.Enabled = false; 
+                btnDisable.Label = "Disabled"; 
+                btnEnable.Label = "Enable"; 
             }
         }
 
@@ -45,17 +45,16 @@ namespace AbbreviationWordAddin
                 var application = Globals.ThisAddIn.Application;
                 AutoCorrect autoCorrect = application.AutoCorrect;
 
-                // Initialize cache before enabling
                 AbbreviationManager.InitializeAutoCorrectCache(autoCorrect);
                 
                 Globals.ThisAddIn.ToggleAbbreviationReplacement(true);
 
-                btnEnable.Enabled = false;  // Disable enable button after click
-                btnDisable.Enabled = true;  // Enable disable button
-                btnEnable.Label = "Enabled Abbreviations"; // Change text to indicate it's clicked
-                btnDisable.Label = "Disable Abbreviations"; // Reset disable button text
+                btnEnable.Enabled = false;  
+                btnDisable.Enabled = true; 
+                btnEnable.Label = "Enabled Abbreviations"; 
+                btnDisable.Label = "Disable Abbreviations"; 
 
-                autoCorrect.ReplaceText = true; // Enable text replacement
+                autoCorrect.ReplaceText = true; 
                 autoCorrect.CorrectCapsLock = true; 
                 autoCorrect.CorrectSentenceCaps = true;
                 autoCorrect.CorrectInitialCaps = true;
@@ -78,17 +77,15 @@ namespace AbbreviationWordAddin
                 var application = Globals.ThisAddIn.Application;
                 AutoCorrect autoCorrect = application.AutoCorrect;
 
-                // Clear cache before disabling
                 AbbreviationManager.ClearAutoCorrectCache();
                 
                 Globals.ThisAddIn.ToggleAbbreviationReplacement(false);
 
-                btnEnable.Enabled = true;  // Enable enable button
-                btnDisable.Enabled = false; // Disable disable button
-                btnDisable.Label = "Disabled Abbreviations"; // Change text to indicate it's clicked
-                btnEnable.Label = "Enable Abbreviations"; // Reset enable button text
+                btnEnable.Enabled = true;  
+                btnDisable.Enabled = false; 
+                btnDisable.Label = "Disabled Abbreviations"; 
+                btnEnable.Label = "Enable Abbreviations"; 
 
-                // Disable various AutoCorrect features
                 autoCorrect.ReplaceText = false;
                 autoCorrect.CorrectCapsLock = false;
                 autoCorrect.CorrectSentenceCaps = false;
@@ -105,12 +102,11 @@ namespace AbbreviationWordAddin
         private async void btnReplaceAll_Click(object sender, RibbonControlEventArgs e)
         {
             var button = (RibbonButton)sender;
-            button.Enabled = false;  // Disable the button
-            button.Label = "Processing...";  // Update text to show processing
+            button.Enabled = false; 
+            button.Label = "Processing...";  
 
             try
             {
-                // Ensure cache is initialized before processing
                 if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
                 {
                     AbbreviationManager.InitializeAutoCorrectCache(Globals.ThisAddIn.Application.AutoCorrect);
@@ -124,20 +120,19 @@ namespace AbbreviationWordAddin
             }
             finally
             {
-                button.Label = "Replace All";  // Reset text
-                button.Enabled = true;  // Re-enable the button
+                button.Label = "Replace All";  
+                button.Enabled = true;  
             }
         }
 
         private async void btnHighlightAll_Click(object sender, RibbonControlEventArgs e)
         {
             var button = (RibbonButton)sender;
-            button.Enabled = false;  // Disable the button
-            button.Label = "Processing...";  // Show processing message
+            button.Enabled = false; 
+            button.Label = "Processing..."; 
 
             try
             {
-                // Ensure cache is initialized before processing
                 if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
                 {
                     AbbreviationManager.InitializeAutoCorrectCache(Globals.ThisAddIn.Application.AutoCorrect);
@@ -151,8 +146,8 @@ namespace AbbreviationWordAddin
             }
             finally
             {
-                button.Label = "Highlight All";  // Reset label
-                button.Enabled = true;  // Re-enable the button
+                button.Label = "Highlight All";  
+                button.Enabled = true;  
             }
         }
 
@@ -161,18 +156,55 @@ namespace AbbreviationWordAddin
             var window = Globals.ThisAddIn.Application.ActiveWindow;
             if (window == null) return;
 
-            // Get the pane (create if doesn't exist)
             var control = Globals.ThisAddIn.EnsureTaskPaneVisible(window, "Show Suggestion BTN");
             if (control == null) return;
 
-            // Get the CustomTaskPane object
             if (Globals.ThisAddIn.taskPanes.TryGetValue(window, out var pane))
             {
-                pane.Visible = true; // show the pane
-                                     // Optional: remove from "user closed" so it can reopen via debouncer later
+                pane.Visible = true; 
                 Globals.ThisAddIn.userClosedTaskPanes.Remove(window);
             }
         }
 
+        private async void highLightLike_Click(object sender, RibbonControlEventArgs e)
+        {
+            var button = (RibbonButton)sender;
+            button.Enabled = false;  
+            button.Label = "Processing...";  
+
+            try
+            {
+                if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
+                {
+                    AbbreviationManager.InitializeAutoCorrectCache(Globals.ThisAddIn.Application.AutoCorrect);
+                }
+
+                await System.Threading.Tasks.Task.Run(() => Globals.ThisAddIn.HighlightLike());
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error during highlighting abbreviation applicable phrases: " + ex.Message, "Error");
+            }
+            finally
+            {
+                button.Label = "Highlight Like";  
+                button.Enabled = true; 
+            }
+        }
+
+        private void button2_Click(object sender, RibbonControlEventArgs e)
+        {
+            var app = Globals.ThisAddIn.Application;
+
+            string helpPath = ExtractTemplateToLocal("AbbreviationWordAddin.Help.Help.docx", "Help.docx");
+
+            Microsoft.Office.Interop.Word.Document helpDoc = app.Documents.Open(
+                FileName: helpPath,
+                ReadOnly: true,
+                Visible: true
+            );
+
+            helpDoc.Saved = true;
+        }
     }
 }
