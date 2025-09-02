@@ -60,10 +60,13 @@ namespace AbbreviationWordAddin
             this.AppxC = this.Factory.CreateRibbonTab();
             this.group2 = this.Factory.CreateRibbonGroup();
             this.btnEnable = this.Factory.CreateRibbonButton();
+            this.separator1 = this.Factory.CreateRibbonSeparator();
             this.btnDisable = this.Factory.CreateRibbonButton();
             this.group1 = this.Factory.CreateRibbonGroup();
             this.btnReplaceAll = this.Factory.CreateRibbonButton();
+            this.separator2 = this.Factory.CreateRibbonSeparator();
             this.btnHighlightAll = this.Factory.CreateRibbonButton();
+            this.separator3 = this.Factory.CreateRibbonSeparator();
             this.highLightLike = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
             this.menuTemplates = this.Factory.CreateRibbonMenu();
@@ -83,14 +86,11 @@ namespace AbbreviationWordAddin
             this.btnAppreciation = this.Factory.CreateRibbonButton();
             this.btnOpOrder = this.Factory.CreateRibbonButton();
             this.btnWarningOrder = this.Factory.CreateRibbonButton();
+            this.separator4 = this.Factory.CreateRibbonSeparator();
             this.button1 = this.Factory.CreateRibbonButton();
             this.group4 = this.Factory.CreateRibbonGroup();
             this.button2 = this.Factory.CreateRibbonButton();
             this.btnCaseStudy = this.Factory.CreateRibbonButton();
-            this.separator1 = this.Factory.CreateRibbonSeparator();
-            this.separator2 = this.Factory.CreateRibbonSeparator();
-            this.separator3 = this.Factory.CreateRibbonSeparator();
-            this.separator4 = this.Factory.CreateRibbonSeparator();
             this.tab1.SuspendLayout();
             this.AppxC.SuspendLayout();
             this.group2.SuspendLayout();
@@ -131,6 +131,10 @@ namespace AbbreviationWordAddin
             this.btnEnable.ShowImage = true;
             this.btnEnable.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEnable_Click);
             // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
             // btnDisable
             // 
             this.btnDisable.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -159,6 +163,10 @@ namespace AbbreviationWordAddin
             this.btnReplaceAll.ShowImage = true;
             this.btnReplaceAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnReplaceAll_Click);
             // 
+            // separator2
+            // 
+            this.separator2.Name = "separator2";
+            // 
             // btnHighlightAll
             // 
             this.btnHighlightAll.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -167,6 +175,10 @@ namespace AbbreviationWordAddin
             this.btnHighlightAll.Name = "btnHighlightAll";
             this.btnHighlightAll.ShowImage = true;
             this.btnHighlightAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnHighlightAll_Click);
+            // 
+            // separator3
+            // 
+            this.separator3.Name = "separator3";
             // 
             // highLightLike
             // 
@@ -321,6 +333,10 @@ namespace AbbreviationWordAddin
             this.btnWarningOrder.ShowImage = true;
             this.btnWarningOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
             // 
+            // separator4
+            // 
+            this.separator4.Name = "separator4";
+            // 
             // button1
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -351,22 +367,6 @@ namespace AbbreviationWordAddin
             this.btnCaseStudy.Name = "btnCaseStudy";
             this.btnCaseStudy.ShowImage = true;
             this.btnCaseStudy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
-            // 
-            // separator1
-            // 
-            this.separator1.Name = "separator1";
-            // 
-            // separator2
-            // 
-            this.separator2.Name = "separator2";
-            // 
-            // separator3
-            // 
-            this.separator3.Name = "separator3";
-            // 
-            // separator4
-            // 
-            this.separator4.Name = "separator4";
             // 
             // AbbreviationRibbon
             // 
