@@ -70,22 +70,48 @@ namespace AbbreviationWordAddin
             this.highLightLike = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
             this.menuTemplates = this.Factory.CreateRibbonMenu();
-            this.btnGeneralFormat = this.Factory.CreateRibbonButton();
+            this.GovtService = this.Factory.CreateRibbonMenu();
+            this.btnGovtofindialetters = this.Factory.CreateRibbonButton();
+            this.btnGovtofindia = this.Factory.CreateRibbonButton();
+            this.btnServiceletters = this.Factory.CreateRibbonButton();
+            this.btnEmailFormat = this.Factory.CreateRibbonButton();
+            this.btnSignalFormat = this.Factory.CreateRibbonButton();
+            this.btnNoteSheet = this.Factory.CreateRibbonButton();
             this.btnDoLetter = this.Factory.CreateRibbonButton();
-            this.btnNotingSheet = this.Factory.CreateRibbonButton();
-            this.btnSignalForm = this.Factory.CreateRibbonButton();
+            this.StaffPaper = this.Factory.CreateRibbonMenu();
+            this.btnAppreciation = this.Factory.CreateRibbonButton();
+            this.btnCopp = this.Factory.CreateRibbonButton();
+            this.btnServicePaper = this.Factory.CreateRibbonButton();
+            this.btnProblemStatement = this.Factory.CreateRibbonButton();
             this.btnStatementOfCase = this.Factory.CreateRibbonButton();
             this.btnStatementOfCaseDPM = this.Factory.CreateRibbonButton();
-            this.btnAppxFormat = this.Factory.CreateRibbonButton();
-            this.btnServicePaper = this.Factory.CreateRibbonButton();
+            this.menu1 = this.Factory.CreateRibbonMenu();
             this.btnAgendaPts = this.Factory.CreateRibbonButton();
-            this.btnOpNotes = this.Factory.CreateRibbonButton();
-            this.btnMoM = this.Factory.CreateRibbonButton();
-            this.btnEmailFormat = this.Factory.CreateRibbonButton();
+            this.btnMoMeeting = this.Factory.CreateRibbonButton();
+            this.btnBrief = this.Factory.CreateRibbonButton();
+            this.btnReturnBrief = this.Factory.CreateRibbonButton();
             this.btnTourNotes = this.Factory.CreateRibbonButton();
-            this.btnAppreciation = this.Factory.CreateRibbonButton();
+            this.btnNotice = this.Factory.CreateRibbonButton();
+            this.btnCabinetNote = this.Factory.CreateRibbonButton();
+            this.btnPressRelease = this.Factory.CreateRibbonButton();
+            this.btnSocialMediaPost = this.Factory.CreateRibbonButton();
+            this.btnGazetteNotification = this.Factory.CreateRibbonButton();
+            this.menu2 = this.Factory.CreateRibbonMenu();
+            this.btnParliamentaryQuestionForwarding = this.Factory.CreateRibbonButton();
+            this.btnParliamentaryQuestionReply = this.Factory.CreateRibbonButton();
+            this.btnCoveringletterReply = this.Factory.CreateRibbonButton();
+            this.menu3 = this.Factory.CreateRibbonMenu();
+            this.btnSampleWarningOrder = this.Factory.CreateRibbonButton();
             this.btnOpOrder = this.Factory.CreateRibbonButton();
+            this.btnGeneralFormat = this.Factory.CreateRibbonButton();
+            this.btnNotingSheet = this.Factory.CreateRibbonButton();
+            this.btnAppxFormat = this.Factory.CreateRibbonButton();
+            this.btnOpNotes = this.Factory.CreateRibbonButton();
             this.btnWarningOrder = this.Factory.CreateRibbonButton();
+            this.menu4 = this.Factory.CreateRibbonMenu();
+            this.btnMOMemorandum = this.Factory.CreateRibbonButton();
+            this.btnBookReview = this.Factory.CreateRibbonButton();
+            this.btnAnnotationinCorrespondence = this.Factory.CreateRibbonButton();
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.button1 = this.Factory.CreateRibbonButton();
             this.group4 = this.Factory.CreateRibbonGroup();
@@ -201,25 +227,333 @@ namespace AbbreviationWordAddin
             // 
             this.menuTemplates.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.menuTemplates.Image = ((System.Drawing.Image)(resources.GetObject("menuTemplates.Image")));
+            this.menuTemplates.Items.Add(this.GovtService);
+            this.menuTemplates.Items.Add(this.StaffPaper);
+            this.menuTemplates.Items.Add(this.menu1);
+            this.menuTemplates.Items.Add(this.menu2);
+            this.menuTemplates.Items.Add(this.menu3);
             this.menuTemplates.Items.Add(this.btnGeneralFormat);
-            this.menuTemplates.Items.Add(this.btnDoLetter);
             this.menuTemplates.Items.Add(this.btnNotingSheet);
-            this.menuTemplates.Items.Add(this.btnSignalForm);
-            this.menuTemplates.Items.Add(this.btnStatementOfCase);
-            this.menuTemplates.Items.Add(this.btnStatementOfCaseDPM);
             this.menuTemplates.Items.Add(this.btnAppxFormat);
-            this.menuTemplates.Items.Add(this.btnServicePaper);
-            this.menuTemplates.Items.Add(this.btnAgendaPts);
             this.menuTemplates.Items.Add(this.btnOpNotes);
-            this.menuTemplates.Items.Add(this.btnMoM);
-            this.menuTemplates.Items.Add(this.btnEmailFormat);
-            this.menuTemplates.Items.Add(this.btnTourNotes);
-            this.menuTemplates.Items.Add(this.btnAppreciation);
-            this.menuTemplates.Items.Add(this.btnOpOrder);
             this.menuTemplates.Items.Add(this.btnWarningOrder);
+            this.menuTemplates.Items.Add(this.menu4);
             this.menuTemplates.Label = "Template";
             this.menuTemplates.Name = "menuTemplates";
             this.menuTemplates.ShowImage = true;
+            // 
+            // GovtService
+            // 
+            this.GovtService.Image = ((System.Drawing.Image)(resources.GetObject("GovtService.Image")));
+            this.GovtService.Items.Add(this.btnGovtofindialetters);
+            this.GovtService.Items.Add(this.btnGovtofindia);
+            this.GovtService.Items.Add(this.btnServiceletters);
+            this.GovtService.Items.Add(this.btnEmailFormat);
+            this.GovtService.Items.Add(this.btnSignalFormat);
+            this.GovtService.Items.Add(this.btnNoteSheet);
+            this.GovtService.Items.Add(this.btnDoLetter);
+            this.GovtService.ItemSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.GovtService.Label = "Govt & Service Correspondence";
+            this.GovtService.Name = "GovtService";
+            this.GovtService.ShowImage = true;
+            // 
+            // btnGovtofindialetters
+            // 
+            this.btnGovtofindialetters.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnGovtofindialetters.Image = ((System.Drawing.Image)(resources.GetObject("btnGovtofindialetters.Image")));
+            this.btnGovtofindialetters.Label = "Govt of India letters";
+            this.btnGovtofindialetters.Name = "btnGovtofindialetters";
+            this.btnGovtofindialetters.ShowImage = true;
+            this.btnGovtofindialetters.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGovtofindialetters_Click);
+            // 
+            // btnGovtofindia
+            // 
+            this.btnGovtofindia.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnGovtofindia.Image = ((System.Drawing.Image)(resources.GetObject("btnGovtofindia.Image")));
+            this.btnGovtofindia.Label = "Govt of India (Inter Departmental Note)";
+            this.btnGovtofindia.Name = "btnGovtofindia";
+            this.btnGovtofindia.ShowImage = true;
+            this.btnGovtofindia.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGovtofindia_Click);
+            // 
+            // btnServiceletters
+            // 
+            this.btnServiceletters.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnServiceletters.Image = ((System.Drawing.Image)(resources.GetObject("btnServiceletters.Image")));
+            this.btnServiceletters.Label = "Service letters";
+            this.btnServiceletters.Name = "btnServiceletters";
+            this.btnServiceletters.ShowImage = true;
+            this.btnServiceletters.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServiceletters_Click);
+            // 
+            // btnEmailFormat
+            // 
+            this.btnEmailFormat.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnEmailFormat.Image = ((System.Drawing.Image)(resources.GetObject("btnEmailFormat.Image")));
+            this.btnEmailFormat.Label = "E-mail Format";
+            this.btnEmailFormat.Name = "btnEmailFormat";
+            this.btnEmailFormat.ShowImage = true;
+            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEmailFormat_Click);
+            // 
+            // btnSignalFormat
+            // 
+            this.btnSignalFormat.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnSignalFormat.Image = ((System.Drawing.Image)(resources.GetObject("btnSignalFormat.Image")));
+            this.btnSignalFormat.Label = "Signal Format";
+            this.btnSignalFormat.Name = "btnSignalFormat";
+            this.btnSignalFormat.ShowImage = true;
+            this.btnSignalFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSignalForm_Click);
+            // 
+            // btnNoteSheet
+            // 
+            this.btnNoteSheet.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnNoteSheet.Image = ((System.Drawing.Image)(resources.GetObject("btnNoteSheet.Image")));
+            this.btnNoteSheet.Label = "Note Sheet";
+            this.btnNoteSheet.Name = "btnNoteSheet";
+            this.btnNoteSheet.ShowImage = true;
+            this.btnNoteSheet.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnNoteSheet_Click);
+            // 
+            // btnDoLetter
+            // 
+            this.btnDoLetter.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnDoLetter.Image = ((System.Drawing.Image)(resources.GetObject("btnDoLetter.Image")));
+            this.btnDoLetter.Label = "DO Letter";
+            this.btnDoLetter.Name = "btnDoLetter";
+            this.btnDoLetter.ShowImage = true;
+            this.btnDoLetter.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDoLetter_Click);
+            // 
+            // StaffPaper
+            // 
+            this.StaffPaper.Image = ((System.Drawing.Image)(resources.GetObject("StaffPaper.Image")));
+            this.StaffPaper.Items.Add(this.btnAppreciation);
+            this.StaffPaper.Items.Add(this.btnCopp);
+            this.StaffPaper.Items.Add(this.btnServicePaper);
+            this.StaffPaper.Items.Add(this.btnProblemStatement);
+            this.StaffPaper.Items.Add(this.btnStatementOfCase);
+            this.StaffPaper.Items.Add(this.btnStatementOfCaseDPM);
+            this.StaffPaper.ItemSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.StaffPaper.Label = "Staff Paper";
+            this.StaffPaper.Name = "StaffPaper";
+            this.StaffPaper.ShowImage = true;
+            // 
+            // btnAppreciation
+            // 
+            this.btnAppreciation.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnAppreciation.Image = ((System.Drawing.Image)(resources.GetObject("btnAppreciation.Image")));
+            this.btnAppreciation.Label = "Appreciation";
+            this.btnAppreciation.Name = "btnAppreciation";
+            this.btnAppreciation.ShowImage = true;
+            this.btnAppreciation.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppreciation_Click);
+            // 
+            // btnCopp
+            // 
+            this.btnCopp.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnCopp.Image = ((System.Drawing.Image)(resources.GetObject("btnCopp.Image")));
+            this.btnCopp.Label = "COPP";
+            this.btnCopp.Name = "btnCopp";
+            this.btnCopp.ShowImage = true;
+            this.btnCopp.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCopp_Click);
+            // 
+            // btnServicePaper
+            // 
+            this.btnServicePaper.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnServicePaper.Image = ((System.Drawing.Image)(resources.GetObject("btnServicePaper.Image")));
+            this.btnServicePaper.Label = "Service Paper";
+            this.btnServicePaper.Name = "btnServicePaper";
+            this.btnServicePaper.ShowImage = true;
+            this.btnServicePaper.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServicePaper_Click);
+            // 
+            // btnProblemStatement
+            // 
+            this.btnProblemStatement.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnProblemStatement.Image = ((System.Drawing.Image)(resources.GetObject("btnProblemStatement.Image")));
+            this.btnProblemStatement.Label = "Problem Statement";
+            this.btnProblemStatement.Name = "btnProblemStatement";
+            this.btnProblemStatement.ShowImage = true;
+            this.btnProblemStatement.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnProblemStatement_Click);
+            // 
+            // btnStatementOfCase
+            // 
+            this.btnStatementOfCase.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnStatementOfCase.Image = ((System.Drawing.Image)(resources.GetObject("btnStatementOfCase.Image")));
+            this.btnStatementOfCase.Label = "Statement of Case";
+            this.btnStatementOfCase.Name = "btnStatementOfCase";
+            this.btnStatementOfCase.ShowImage = true;
+            this.btnStatementOfCase.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCase_Click);
+            // 
+            // btnStatementOfCaseDPM
+            // 
+            this.btnStatementOfCaseDPM.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnStatementOfCaseDPM.Image = ((System.Drawing.Image)(resources.GetObject("btnStatementOfCaseDPM.Image")));
+            this.btnStatementOfCaseDPM.Label = "Statement of Case (DPM)";
+            this.btnStatementOfCaseDPM.Name = "btnStatementOfCaseDPM";
+            this.btnStatementOfCaseDPM.ShowImage = true;
+            this.btnStatementOfCaseDPM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCaseDPM_Click);
+            // 
+            // menu1
+            // 
+            this.menu1.Image = ((System.Drawing.Image)(resources.GetObject("menu1.Image")));
+            this.menu1.Items.Add(this.btnAgendaPts);
+            this.menu1.Items.Add(this.btnMoMeeting);
+            this.menu1.Items.Add(this.btnBrief);
+            this.menu1.Items.Add(this.btnReturnBrief);
+            this.menu1.Items.Add(this.btnTourNotes);
+            this.menu1.Items.Add(this.btnNotice);
+            this.menu1.Items.Add(this.btnCabinetNote);
+            this.menu1.Items.Add(this.btnPressRelease);
+            this.menu1.Items.Add(this.btnSocialMediaPost);
+            this.menu1.Items.Add(this.btnGazetteNotification);
+            this.menu1.ItemSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.menu1.Label = "Notio / Notices";
+            this.menu1.Name = "menu1";
+            this.menu1.ShowImage = true;
+            // 
+            // btnAgendaPts
+            // 
+            this.btnAgendaPts.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnAgendaPts.Image = ((System.Drawing.Image)(resources.GetObject("btnAgendaPts.Image")));
+            this.btnAgendaPts.Label = "Agenda Pts";
+            this.btnAgendaPts.Name = "btnAgendaPts";
+            this.btnAgendaPts.ShowImage = true;
+            this.btnAgendaPts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAgendaPts_Click);
+            // 
+            // btnMoMeeting
+            // 
+            this.btnMoMeeting.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnMoMeeting.Image = ((System.Drawing.Image)(resources.GetObject("btnMoMeeting.Image")));
+            this.btnMoMeeting.Label = "MOM (Minutes of Meeting)";
+            this.btnMoMeeting.Name = "btnMoMeeting";
+            this.btnMoMeeting.ShowImage = true;
+            this.btnMoMeeting.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMoMeeting_Click);
+            // 
+            // btnBrief
+            // 
+            this.btnBrief.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnBrief.Image = ((System.Drawing.Image)(resources.GetObject("btnBrief.Image")));
+            this.btnBrief.Label = "Brief";
+            this.btnBrief.Name = "btnBrief";
+            this.btnBrief.ShowImage = true;
+            this.btnBrief.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnBrief_Click);
+            // 
+            // btnReturnBrief
+            // 
+            this.btnReturnBrief.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnReturnBrief.Image = ((System.Drawing.Image)(resources.GetObject("btnReturnBrief.Image")));
+            this.btnReturnBrief.Label = "Return Brief";
+            this.btnReturnBrief.Name = "btnReturnBrief";
+            this.btnReturnBrief.ShowImage = true;
+            this.btnReturnBrief.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnReturnBrief_Click);
+            // 
+            // btnTourNotes
+            // 
+            this.btnTourNotes.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnTourNotes.Image = ((System.Drawing.Image)(resources.GetObject("btnTourNotes.Image")));
+            this.btnTourNotes.Label = "Tour Notes";
+            this.btnTourNotes.Name = "btnTourNotes";
+            this.btnTourNotes.ShowImage = true;
+            this.btnTourNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTourNotes_Click);
+            // 
+            // btnNotice
+            // 
+            this.btnNotice.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnNotice.Image = ((System.Drawing.Image)(resources.GetObject("btnNotice.Image")));
+            this.btnNotice.Label = "Notice";
+            this.btnNotice.Name = "btnNotice";
+            this.btnNotice.ShowImage = true;
+            this.btnNotice.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnNotice_Click);
+            // 
+            // btnCabinetNote
+            // 
+            this.btnCabinetNote.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnCabinetNote.Image = ((System.Drawing.Image)(resources.GetObject("btnCabinetNote.Image")));
+            this.btnCabinetNote.Label = "Cabinet Note";
+            this.btnCabinetNote.Name = "btnCabinetNote";
+            this.btnCabinetNote.ShowImage = true;
+            this.btnCabinetNote.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCabinetNote_Click);
+            // 
+            // btnPressRelease
+            // 
+            this.btnPressRelease.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnPressRelease.Image = ((System.Drawing.Image)(resources.GetObject("btnPressRelease.Image")));
+            this.btnPressRelease.Label = "Press Release";
+            this.btnPressRelease.Name = "btnPressRelease";
+            this.btnPressRelease.ShowImage = true;
+            this.btnPressRelease.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnPressRelease_Click);
+            // 
+            // btnSocialMediaPost
+            // 
+            this.btnSocialMediaPost.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnSocialMediaPost.Image = ((System.Drawing.Image)(resources.GetObject("btnSocialMediaPost.Image")));
+            this.btnSocialMediaPost.Label = "Social Media Post";
+            this.btnSocialMediaPost.Name = "btnSocialMediaPost";
+            this.btnSocialMediaPost.ShowImage = true;
+            this.btnSocialMediaPost.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSocialMediaPost_Click);
+            // 
+            // btnGazetteNotification
+            // 
+            this.btnGazetteNotification.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.btnGazetteNotification.Image = ((System.Drawing.Image)(resources.GetObject("btnGazetteNotification.Image")));
+            this.btnGazetteNotification.Label = "Gazette Notification";
+            this.btnGazetteNotification.Name = "btnGazetteNotification";
+            this.btnGazetteNotification.ShowImage = true;
+            this.btnGazetteNotification.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGazetteNotification_Click);
+            // 
+            // menu2
+            // 
+            this.menu2.Image = ((System.Drawing.Image)(resources.GetObject("menu2.Image")));
+            this.menu2.Items.Add(this.btnParliamentaryQuestionForwarding);
+            this.menu2.Items.Add(this.btnParliamentaryQuestionReply);
+            this.menu2.Items.Add(this.btnCoveringletterReply);
+            this.menu2.Label = "Parliamentary Question";
+            this.menu2.Name = "menu2";
+            this.menu2.ShowImage = true;
+            // 
+            // btnParliamentaryQuestionForwarding
+            // 
+            this.btnParliamentaryQuestionForwarding.Image = ((System.Drawing.Image)(resources.GetObject("btnParliamentaryQuestionForwarding.Image")));
+            this.btnParliamentaryQuestionForwarding.Label = "Parliamentary Question (Forwarding)";
+            this.btnParliamentaryQuestionForwarding.Name = "btnParliamentaryQuestionForwarding";
+            this.btnParliamentaryQuestionForwarding.ShowImage = true;
+            this.btnParliamentaryQuestionForwarding.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnParliamentaryQuestionForwarding_Click);
+            // 
+            // btnParliamentaryQuestionReply
+            // 
+            this.btnParliamentaryQuestionReply.Image = ((System.Drawing.Image)(resources.GetObject("btnParliamentaryQuestionReply.Image")));
+            this.btnParliamentaryQuestionReply.Label = "Parliamentary Question (Reply)";
+            this.btnParliamentaryQuestionReply.Name = "btnParliamentaryQuestionReply";
+            this.btnParliamentaryQuestionReply.ShowImage = true;
+            this.btnParliamentaryQuestionReply.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnParliamentaryQuestionReply_Click);
+            // 
+            // btnCoveringletterReply
+            // 
+            this.btnCoveringletterReply.Image = ((System.Drawing.Image)(resources.GetObject("btnCoveringletterReply.Image")));
+            this.btnCoveringletterReply.Label = "Covering letter (Reply)";
+            this.btnCoveringletterReply.Name = "btnCoveringletterReply";
+            this.btnCoveringletterReply.ShowImage = true;
+            this.btnCoveringletterReply.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCoveringletterReply_Click);
+            // 
+            // menu3
+            // 
+            this.menu3.Image = ((System.Drawing.Image)(resources.GetObject("menu3.Image")));
+            this.menu3.Items.Add(this.btnSampleWarningOrder);
+            this.menu3.Items.Add(this.btnOpOrder);
+            this.menu3.Label = "Directives / Order / Instr";
+            this.menu3.Name = "menu3";
+            this.menu3.ShowImage = true;
+            // 
+            // btnSampleWarningOrder
+            // 
+            this.btnSampleWarningOrder.Image = ((System.Drawing.Image)(resources.GetObject("btnSampleWarningOrder.Image")));
+            this.btnSampleWarningOrder.Label = "Sample Warning Order";
+            this.btnSampleWarningOrder.Name = "btnSampleWarningOrder";
+            this.btnSampleWarningOrder.ShowImage = true;
+            this.btnSampleWarningOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSampleWarningOrder_Click);
+            // 
+            // btnOpOrder
+            // 
+            this.btnOpOrder.Image = ((System.Drawing.Image)(resources.GetObject("btnOpOrder.Image")));
+            this.btnOpOrder.Label = "Op Order";
+            this.btnOpOrder.Name = "btnOpOrder";
+            this.btnOpOrder.ShowImage = true;
+            this.btnOpOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpOrder_Click);
             // 
             // btnGeneralFormat
             // 
@@ -228,40 +562,12 @@ namespace AbbreviationWordAddin
             this.btnGeneralFormat.ShowImage = true;
             this.btnGeneralFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnGeneralFormat_Click);
             // 
-            // btnDoLetter
-            // 
-            this.btnDoLetter.Label = "DO Letter";
-            this.btnDoLetter.Name = "btnDoLetter";
-            this.btnDoLetter.ShowImage = true;
-            this.btnDoLetter.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnDoLetter_Click);
-            // 
             // btnNotingSheet
             // 
             this.btnNotingSheet.Label = "Noting Sheet";
             this.btnNotingSheet.Name = "btnNotingSheet";
             this.btnNotingSheet.ShowImage = true;
             this.btnNotingSheet.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnNotingSheet_Click);
-            // 
-            // btnSignalForm
-            // 
-            this.btnSignalForm.Label = "Signal Form";
-            this.btnSignalForm.Name = "btnSignalForm";
-            this.btnSignalForm.ShowImage = true;
-            this.btnSignalForm.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSignalForm_Click);
-            // 
-            // btnStatementOfCase
-            // 
-            this.btnStatementOfCase.Label = "Statement of Case";
-            this.btnStatementOfCase.Name = "btnStatementOfCase";
-            this.btnStatementOfCase.ShowImage = true;
-            this.btnStatementOfCase.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCase_Click);
-            // 
-            // btnStatementOfCaseDPM
-            // 
-            this.btnStatementOfCaseDPM.Label = "Statement of Case (DPM)";
-            this.btnStatementOfCaseDPM.Name = "btnStatementOfCaseDPM";
-            this.btnStatementOfCaseDPM.ShowImage = true;
-            this.btnStatementOfCaseDPM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnStatementOfCaseDPM_Click);
             // 
             // btnAppxFormat
             // 
@@ -270,20 +576,6 @@ namespace AbbreviationWordAddin
             this.btnAppxFormat.ShowImage = true;
             this.btnAppxFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppxFormat_Click);
             // 
-            // btnServicePaper
-            // 
-            this.btnServicePaper.Label = "Service Paper";
-            this.btnServicePaper.Name = "btnServicePaper";
-            this.btnServicePaper.ShowImage = true;
-            this.btnServicePaper.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnServicePaper_Click);
-            // 
-            // btnAgendaPts
-            // 
-            this.btnAgendaPts.Label = "Agenda Pts";
-            this.btnAgendaPts.Name = "btnAgendaPts";
-            this.btnAgendaPts.ShowImage = true;
-            this.btnAgendaPts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAgendaPts_Click);
-            // 
             // btnOpNotes
             // 
             this.btnOpNotes.Label = "Op Notes";
@@ -291,47 +583,46 @@ namespace AbbreviationWordAddin
             this.btnOpNotes.ShowImage = true;
             this.btnOpNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpNotes_Click);
             // 
-            // btnMoM
-            // 
-            this.btnMoM.Label = "MoM";
-            this.btnMoM.Name = "btnMoM";
-            this.btnMoM.ShowImage = true;
-            this.btnMoM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMoM_Click);
-            // 
-            // btnEmailFormat
-            // 
-            this.btnEmailFormat.Label = "E-mail Format";
-            this.btnEmailFormat.Name = "btnEmailFormat";
-            this.btnEmailFormat.ShowImage = true;
-            this.btnEmailFormat.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnEmailFormat_Click);
-            // 
-            // btnTourNotes
-            // 
-            this.btnTourNotes.Label = "Tour Notes";
-            this.btnTourNotes.Name = "btnTourNotes";
-            this.btnTourNotes.ShowImage = true;
-            this.btnTourNotes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTourNotes_Click);
-            // 
-            // btnAppreciation
-            // 
-            this.btnAppreciation.Label = "Appreciation";
-            this.btnAppreciation.Name = "btnAppreciation";
-            this.btnAppreciation.ShowImage = true;
-            this.btnAppreciation.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAppreciation_Click);
-            // 
-            // btnOpOrder
-            // 
-            this.btnOpOrder.Label = "Op Order";
-            this.btnOpOrder.Name = "btnOpOrder";
-            this.btnOpOrder.ShowImage = true;
-            this.btnOpOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnOpOrder_Click);
-            // 
             // btnWarningOrder
             // 
             this.btnWarningOrder.Label = "Key Features (JSSD)";
             this.btnWarningOrder.Name = "btnWarningOrder";
             this.btnWarningOrder.ShowImage = true;
             this.btnWarningOrder.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnWarningOrder_Click);
+            // 
+            // menu4
+            // 
+            this.menu4.Image = ((System.Drawing.Image)(resources.GetObject("menu4.Image")));
+            this.menu4.Items.Add(this.btnMOMemorandum);
+            this.menu4.Items.Add(this.btnBookReview);
+            this.menu4.Items.Add(this.btnAnnotationinCorrespondence);
+            this.menu4.Label = "Misc";
+            this.menu4.Name = "menu4";
+            this.menu4.ShowImage = true;
+            // 
+            // btnMOMemorandum
+            // 
+            this.btnMOMemorandum.Image = ((System.Drawing.Image)(resources.GetObject("btnMOMemorandum.Image")));
+            this.btnMOMemorandum.Label = "MOM (Memorandum of Understanding)";
+            this.btnMOMemorandum.Name = "btnMOMemorandum";
+            this.btnMOMemorandum.ShowImage = true;
+            this.btnMOMemorandum.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMOMemorandum_Click);
+            // 
+            // btnBookReview
+            // 
+            this.btnBookReview.Image = ((System.Drawing.Image)(resources.GetObject("btnBookReview.Image")));
+            this.btnBookReview.Label = "Book Review";
+            this.btnBookReview.Name = "btnBookReview";
+            this.btnBookReview.ShowImage = true;
+            this.btnBookReview.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnBookReview_Click);
+            // 
+            // btnAnnotationinCorrespondence
+            // 
+            this.btnAnnotationinCorrespondence.Image = ((System.Drawing.Image)(resources.GetObject("btnAnnotationinCorrespondence.Image")));
+            this.btnAnnotationinCorrespondence.Label = "Annotation in Correspondence";
+            this.btnAnnotationinCorrespondence.Name = "btnAnnotationinCorrespondence";
+            this.btnAnnotationinCorrespondence.ShowImage = true;
+            this.btnAnnotationinCorrespondence.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnAnnotationinCorrespondence_Click);
             // 
             // separator4
             // 
@@ -392,9 +683,41 @@ namespace AbbreviationWordAddin
         }
 
 
-        private void btnGeneralFormat_Click(object sender, RibbonControlEventArgs e)
+        private void btnGovtofindialetters_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.General Format.docx", "General Format.docx");
+            
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Govt of India letters.docx", "Govt of India letters.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnGovtofindia_Click(object sender, RibbonControlEventArgs e)
+        {
+            
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Govt of India(Inter Departmental Note).docx", "Govt of India(Inter Departmental Note).docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnServiceletters_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Service letters.docx", "Service letters.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnEmailFormat_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.E-mail Format.docx", "E-mail Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnSignalForm_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Signal Form.docx", "Signal Form.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnNoteSheet_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Note Sheet.docx", "Note Sheet.docx");
             InsertTemplate(templatePath);
         }
 
@@ -405,15 +728,28 @@ namespace AbbreviationWordAddin
             InsertTemplate(templatePath);
         }
 
-        private void btnNotingSheet_Click(object sender, RibbonControlEventArgs e)
+        private void btnAppreciation_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Noting Sheet.docx", "Noting Sheet.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appreciation.docx", "Appreciation.docx");
             InsertTemplate(templatePath);
         }
 
-        private void btnSignalForm_Click(object sender, RibbonControlEventArgs e)
+
+        private void btnCopp_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Signal Form.docx", "Signal Form.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.COPP.docx", "COPP.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnServicePaper_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Service Paper.docx", "Service Paper.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnProblemStatement_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Problem Statement.docx", "Problem Statement.docx");
             InsertTemplate(templatePath);
         }
 
@@ -429,39 +765,28 @@ namespace AbbreviationWordAddin
             InsertTemplate(templatePath);
         }
 
-        private void btnAppxFormat_Click(object sender, RibbonControlEventArgs e)
-        {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appx Format.docx", "Appx Format.docx");
-            InsertTemplate(templatePath);
-        }
-
-        private void btnServicePaper_Click(object sender, RibbonControlEventArgs e)
-        {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Service Paper.docx", "Service Paper.docx");
-            InsertTemplate(templatePath);
-        }
-
         private void btnAgendaPts_Click(object sender, RibbonControlEventArgs e)
         {
             string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Agenda Pts.docx", "Agenda Pts.docx");
             InsertTemplate(templatePath);
         }
 
-        private void btnOpNotes_Click(object sender, RibbonControlEventArgs e)
+
+        private void btnMoMeeting_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op Notes.docx", "Op Notes.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.MOM (Minutes of Meeting).docx", "MOM (Minutes of Meeting).docx");
             InsertTemplate(templatePath);
         }
 
-        private void btnMoM_Click(object sender, RibbonControlEventArgs e)
+        private void btnBrief_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.MoM.docx", "MoM.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Brief.docx", "Brief.docx");
             InsertTemplate(templatePath);
         }
 
-        private void btnEmailFormat_Click(object sender, RibbonControlEventArgs e)
+        private void btnReturnBrief_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.E-mail Format.docx", "E-mail Format.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Return Brief.docx", "Return Brief.docx");
             InsertTemplate(templatePath);
         }
 
@@ -471,15 +796,60 @@ namespace AbbreviationWordAddin
             InsertTemplate(templatePath);
         }
 
-        private void btnAppreciation_Click(object sender, RibbonControlEventArgs e)
+
+        private void btnNotice_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appreciation.docx", "Appreciation.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Notice.docx", "Notice.docx");
             InsertTemplate(templatePath);
         }
 
-        private void btnCaseStudy_Click(object sender, RibbonControlEventArgs e)
+        private void btnCabinetNote_Click(object sender, RibbonControlEventArgs e)
         {
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Case Study.docx", "Case Study.docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Cabinet Note.docx", "Cabinet Note.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnPressRelease_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Press Release.docx", "Press Release.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnSocialMediaPost_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Social Media Post.docx", "Social Media Post.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnGazetteNotification_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Gazette Notification.docx", "Gazette Notification.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnParliamentaryQuestionForwarding_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Parliamentary Question (Forwarding).docx", "Parliamentary Question (Forwarding).docx");
+            InsertTemplate(templatePath);
+        }
+
+
+        private void btnParliamentaryQuestionReply_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Parliamentary Question (Reply).docx", "Parliamentary Question (Reply).docx");
+            InsertTemplate(templatePath);
+        }
+
+
+        private void btnCoveringletterReply_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Covering letter (Reply).docx", "Covering letter (Reply).docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnSampleWarningOrder_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Simple Warning Order.docx", "Simple Warning Order.docx");
             InsertTemplate(templatePath);
         }
 
@@ -489,11 +859,83 @@ namespace AbbreviationWordAddin
             InsertTemplate(templatePath);
         }
 
+        private void btnMOMemorandum_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.MOM (Memorandum of Understanding).docx", "MOM (Memorandum of Understanding).docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnBookReview_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Book Review.docx", "Book Review.docx");
+            InsertTemplate(templatePath);
+        }
+
+
+        private void btnAnnotationinCorrespondence_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Annotation in Correspondence.docx", "Annotation in Correspondence.docx");
+            InsertTemplate(templatePath);
+        }
+
+
+        private void btnGeneralFormat_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.General Format.docx", "General Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        private void btnNotingSheet_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Noting Sheet.docx", "Noting Sheet.docx");
+            InsertTemplate(templatePath);
+        }
+
+        
+
+        private void btnAppxFormat_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Appx Format.docx", "Appx Format.docx");
+            InsertTemplate(templatePath);
+        }
+
+        
+
+        
+
+        private void btnOpNotes_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Op Notes.docx", "Op Notes.docx");
+            InsertTemplate(templatePath);
+        }
+
+        
+
+       
+
+        
+
+        
+
+        
+
+        
+
+        private void btnCaseStudy_Click(object sender, RibbonControlEventArgs e)
+        {
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Case Study.docx", "Case Study.docx");
+            InsertTemplate(templatePath);
+        }
+
+        
+
         private void btnWarningOrder_Click(object sender, RibbonControlEventArgs e)
         {
             string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Key Features (JSSD).docx", "Key Features (JSSD).docx");
             InsertTemplate(templatePath);
         }
+
+
 
         public static string ExtractTemplateToLocal(string resourceName, string outputFileName)
         {
@@ -563,14 +1005,14 @@ namespace AbbreviationWordAddin
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnGeneralFormat;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnDoLetter;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnNotingSheet;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSignalForm;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSignalFormat;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnStatementOfCase;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnStatementOfCaseDPM;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAppxFormat;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnServicePaper;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAgendaPts;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnOpNotes;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMoM;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMoMeeting;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnEmailFormat;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnTourNotes;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnAppreciation;
@@ -587,6 +1029,32 @@ namespace AbbreviationWordAddin
         internal RibbonSeparator separator2;
         internal RibbonSeparator separator3;
         internal RibbonSeparator separator4;
+        internal RibbonMenu GovtService;
+        internal RibbonMenu StaffPaper;
+        internal RibbonButton btnGovtofindialetters;
+        internal RibbonButton btnGovtofindia;
+        internal RibbonButton btnServiceletters;
+        internal RibbonButton btnNoteSheet;
+        internal RibbonButton btnCopp;
+        internal RibbonButton btnProblemStatement;
+        internal RibbonMenu menu1;
+        internal RibbonButton btnBrief;
+        internal RibbonButton btnReturnBrief;
+        internal RibbonButton btnNotice;
+        internal RibbonButton btnCabinetNote;
+        internal RibbonButton btnPressRelease;
+        internal RibbonButton btnSocialMediaPost;
+        internal RibbonButton btnGazetteNotification;
+        internal RibbonMenu menu2;
+        internal RibbonButton btnParliamentaryQuestionForwarding;
+        internal RibbonButton btnParliamentaryQuestionReply;
+        internal RibbonButton btnCoveringletterReply;
+        internal RibbonMenu menu3;
+        internal RibbonButton btnSampleWarningOrder;
+        internal RibbonMenu menu4;
+        internal RibbonButton btnMOMemorandum;
+        internal RibbonButton btnBookReview;
+        internal RibbonButton btnAnnotationinCorrespondence;
     }
 
     partial class ThisRibbonCollection

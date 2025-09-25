@@ -349,10 +349,32 @@
     <EmbeddedResource Include="Templates\Statement of Case %28DPM%29.docx" />
     <EmbeddedResource Include="Templates\Statement of Case.docx" />
     <EmbeddedResource Include="Templates\Appreciation.docx" />
-    <None Include="Templates\Case Study.docx" />
+    <EmbeddedResource Include="Templates\Case Study.docx" />
     <EmbeddedResource Include="Templates\Op order.docx" />
     <EmbeddedResource Include="Templates\Tour Notes.docx" />
     <EmbeddedResource Include="Templates\Key Features %28JSSD%29.docx" />
+    <EmbeddedResource Include="Templates\Annotation in Correspondence.docx" />
+    <EmbeddedResource Include="Templates\Book Review.docx" />
+    <EmbeddedResource Include="Templates\Brief.docx" />
+    <EmbeddedResource Include="Templates\Cabinet Note.docx" />
+    <EmbeddedResource Include="Templates\COPP.docx" />
+    <EmbeddedResource Include="Templates\Covering letter %28Reply%29.docx" />
+    <EmbeddedResource Include="Templates\Gazette Notification.docx" />
+    <EmbeddedResource Include="Templates\Govt of India %28Inter Departmental Note%29.docx" />
+    <EmbeddedResource Include="Templates\Govt of India letters.docx" />
+    <EmbeddedResource Include="Templates\MOM %28Memorandum of Understanding%29.docx" />
+    <EmbeddedResource Include="Templates\MOM %28Minutes of Meeting%29.docx" />
+    <EmbeddedResource Include="Templates\Note Sheet.docx" />
+    <EmbeddedResource Include="Templates\Notice.docx" />
+    <EmbeddedResource Include="Templates\Parliamentary Question %28Forwarding%29.docx" />
+    <EmbeddedResource Include="Templates\Parliamentary Question %28Reply%29.docx" />
+    <EmbeddedResource Include="Templates\Press Release.docx" />
+    <EmbeddedResource Include="Templates\Problem Statement.docx" />
+    <EmbeddedResource Include="Templates\Return Brief.docx" />
+    <EmbeddedResource Include="Templates\Service letters.docx" />
+    <EmbeddedResource Include="Templates\Signal format.docx" />
+    <EmbeddedResource Include="Templates\Simple Warning Order.docx" />
+    <EmbeddedResource Include="Templates\Social Media Post.docx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
