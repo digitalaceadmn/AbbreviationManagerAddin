@@ -693,7 +693,7 @@ namespace AbbreviationWordAddin
         private void btnGovtofindia_Click(object sender, RibbonControlEventArgs e)
         {
             
-            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Govt of India(Inter Departmental Note).docx", "Govt of India(Inter Departmental Note).docx");
+            string templatePath = ExtractTemplateToLocal("AbbreviationWordAddin.Templates.Govt of India (Inter Departmental Note).docx", "Govt of India (Inter Departmental Note).docx");
             InsertTemplate(templatePath);
         }
 
