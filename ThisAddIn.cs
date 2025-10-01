@@ -343,47 +343,38 @@ namespace AbbreviationWordAddin
         public void ToggleAbbreviationReplacement(bool enable)
         {
             isAbbreviationEnabled = enable;
-            reloadAbbrDataFromDict = enable;
+
+            var window = this.Application.ActiveWindow;
+
+            if (!taskPanes.ContainsKey(window))
+            {
+                // Create pane only once per window
+                SuggestionPaneControl = new SuggestionPaneControl();
+                var pane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions", window);
+                pane.Width = 500;
+
+                taskPanes[window] = pane;
+
+                TrackTaskPaneVisibility(pane, window);
+            }
+
+            var currentPane = taskPanes[window];
 
             if (enable)
             {
                 AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
-
-                if (suggestionTaskPane == null)
-                {
-                    SuggestionPaneControl = new SuggestionPaneControl();
-                    suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
-                    suggestionTaskPane.Width = 500;
-                }
-
-                if (!suggestionTaskPane.Visible)
-                {
-                    suggestionTaskPane.Visible = true;
-                    System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("[INFO] Suggestion pane is already visible.");
-                }
+                currentPane.Visible = true;
+                MessageBox.Show("Abbreviation Replacement Enabled", "Status");
             }
             else
             {
                 AbbreviationManager.ClearAutoCorrectCache();
-
-                if (suggestionTaskPane != null)
-                {
-                    if (suggestionTaskPane.Visible)
-                    {
-                        suggestionTaskPane.Visible = false;
-                        System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("[INFO] Suggestion pane is already hidden.");
-                    }
-                }
+                currentPane.Visible = false;
+                MessageBox.Show("Abbreviation Replacement Disabled", "Status");
             }
         }
+
+
 
 
 
