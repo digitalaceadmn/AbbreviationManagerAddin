@@ -130,7 +130,7 @@ namespace AbbreviationWordAddin
                 SuggestionPaneControl.OnTextChanged += SuggestionPaneControl_OnTextChanged;
                 SuggestionPaneControl.OnSuggestionAccepted += SuggestionPaneControl_OnSuggestionAccepted;
                 suggestionTaskPane.Width = 500;
-                suggestionTaskPane.Visible = true;
+                //suggestionTaskPane.Visible = true;
 
                 typingTimer = new Timer { Interval = 300 };
                 typingTimer.Tick += TypingTimer_Tick;
@@ -311,26 +311,81 @@ namespace AbbreviationWordAddin
 
         }
 
+        //public void ToggleAbbreviationReplacement(bool enable)
+        //{
+        //    if (!Properties.Settings.Default.IsAutoCorrectLoaded)
+        //    {
+        //        reloadAbbrDataFromDict = enable;
+        //        if (reloadAbbrDataFromDict)
+        //        {
+        //            isAbbreviationEnabled = true;
+        //            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+        //            if (suggestionTaskPane != null)
+        //            {
+        //                suggestionTaskPane.Visible = true;
+        //            }
+        //            System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");
+        //        }
+        //        else
+        //        {
+        //            isAbbreviationEnabled = false;
+        //            AbbreviationManager.ClearAutoCorrectCache();
+        //            if (suggestionTaskPane != null)
+        //            {
+        //                suggestionTaskPane.Visible = false;
+        //            }
+        //            System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
+        //        }
+        //    }
+
+        //}
+
         public void ToggleAbbreviationReplacement(bool enable)
         {
-            if (!Properties.Settings.Default.IsAutoCorrectLoaded)
+            isAbbreviationEnabled = enable;
+            reloadAbbrDataFromDict = enable;
+
+            if (enable)
             {
-                reloadAbbrDataFromDict = enable;
-                if (reloadAbbrDataFromDict)
+                AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+
+                if (suggestionTaskPane == null)
                 {
-                    isAbbreviationEnabled = true;
-                    AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+                    SuggestionPaneControl = new SuggestionPaneControl();
+                    suggestionTaskPane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions");
+                    suggestionTaskPane.Width = 500;
+                }
+
+                if (!suggestionTaskPane.Visible)
+                {
+                    suggestionTaskPane.Visible = true;
                     System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Enabled", "Status");
                 }
                 else
                 {
-                    isAbbreviationEnabled = false;
-                    AbbreviationManager.ClearAutoCorrectCache();
-                    System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
+                    System.Diagnostics.Debug.WriteLine("[INFO] Suggestion pane is already visible.");
                 }
             }
-                
+            else
+            {
+                AbbreviationManager.ClearAutoCorrectCache();
+
+                if (suggestionTaskPane != null)
+                {
+                    if (suggestionTaskPane.Visible)
+                    {
+                        suggestionTaskPane.Visible = false;
+                        System.Windows.Forms.MessageBox.Show("Abbreviation Replacement Disabled", "Status");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("[INFO] Suggestion pane is already hidden.");
+                    }
+                }
+            }
         }
+
+
 
         public void ReplaceAllDirectAbbreviations_Fast()
         {
@@ -1256,15 +1311,38 @@ namespace AbbreviationWordAddin
                         }, null);
                     }
 
-                    var phrases = AbbreviationManager.GetAllPhrases()
-                                                     .OrderByDescending(p => p.Length)
-                                                     .ToList();
+                    // ✅ Stop words to ignore
+                    var stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "a", "an", "the", "of", "for", "to", "in", "on", "at", "by", "and", "or" };
 
-                    // ✅ Build regex for substring (no word boundaries, just escape phrases)
-                    string pattern = string.Join("|", phrases.Select(Regex.Escape));
+                    // ✅ Build pattern parts for partial phrase matching
+                    var phrases = AbbreviationManager.GetAllPhrases()
+                        .Select(p =>
+                        {
+                            var words = p.Split(' ')
+                                         .Where(w => w.Length > 2 && !stopWords.Contains(w))
+                                         .ToList();
+
+                            // ✅ Build progressive partial phrases: 
+                            // e.g. "Accounting Manager Assistant" → "Accounting", "Accounting Manager", "Accounting Manager Assistant"
+                            var parts = new List<string>();
+                            for (int i = 1; i <= words.Count; i++)
+                            {
+                                var partial = string.Join(@"\s+", words.Take(i).Select(Regex.Escape));
+                                parts.Add(partial);
+                            }
+                            return parts;
+                        })
+                        .SelectMany(p => p)
+                        .Distinct()
+                        .OrderByDescending(p => p.Length)
+                        .ToList();
+
+                    // ✅ Build final regex (now supports partials)
+                    string pattern = string.Join("|", phrases);
                     Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                    // Count total matches
+                    // ✅ Count matches
                     int totalMatches = 0;
                     syncContext.Send(_ =>
                     {
@@ -1279,6 +1357,7 @@ namespace AbbreviationWordAddin
                     debugLog.AppendLine($"Total matches found: {totalMatches}");
                     int processed = 0;
 
+                    // ✅ Highlight matches
                     foreach (Word.Paragraph para in doc.Paragraphs)
                     {
                         string paraText = para.Range.Text;
@@ -1301,9 +1380,7 @@ namespace AbbreviationWordAddin
                                         end = para.Range.End;
 
                                     Word.Range range = doc.Range(start, end);
-
-                                    // ✅ Instead of font color, apply real highlight
-                                    range.HighlightColorIndex = Word.WdColorIndex.wdYellow;
+                                    range.Font.Color = Word.WdColor.wdColorRed;
 
                                     System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
                                 }
@@ -1341,6 +1418,8 @@ namespace AbbreviationWordAddin
             highlightThread.Start();
             progressForm.ShowDialog();
         }
+
+
 
 
 
@@ -1838,11 +1917,15 @@ namespace AbbreviationWordAddin
                     {
                         if (IsLastCharSpace(sel))
                         {
+                            // ❌ COMMENTED: Auto-replace logic is disabled
+                            /*
                             ReplaceWithFullForm(candidate, testRange, sel);
                             lastReplacedShortForm = candidate;
                             lastReplacedFullForm = GetFullFormFor(candidate);
                             lastUndoneWord = null;
+                            */
                         }
+
                         return;
                     }
                     else
@@ -1865,6 +1948,7 @@ namespace AbbreviationWordAddin
                 );
             }
         }
+
 
 
         private bool IsLastCharSpace(Word.Selection sel)
