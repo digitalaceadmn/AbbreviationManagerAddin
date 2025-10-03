@@ -143,6 +143,7 @@ namespace AbbreviationWordAddin
             this.group2.Items.Add(this.btnDisable);
             this.group2.Label = "Enable / Disable";
             this.group2.Name = "group2";
+            this.group2.Visible = false;
             // 
             // separator1
             // 
@@ -951,20 +952,31 @@ namespace AbbreviationWordAddin
             {
                 var tempDoc = Globals.ThisAddIn.Application.Documents.Open(templatePath, Visible: false);
 
+                // Copy entire content
                 tempDoc.Content.WholeStory();
                 tempDoc.Content.Copy();
 
                 tempDoc.Close(false);
 
-                System.Threading.Thread.Sleep(200); 
+                System.Threading.Thread.Sleep(200);
 
                 var currentDoc = Globals.ThisAddIn.Application.ActiveDocument;
                 currentDoc.Activate();
 
-                Globals.ThisAddIn.Application.Selection.HomeKey(WdUnits.wdStory);
-                Globals.ThisAddIn.Application.Selection.Paste();
+                var selection = Globals.ThisAddIn.Application.Selection;
 
-                Globals.ThisAddIn.Application.Selection.HomeKey(WdUnits.wdStory);
+                // Move selection to the end of the document
+                selection.EndKey(WdUnits.wdStory);
+
+                // Optional: Insert a few line breaks before pasting
+                selection.TypeParagraph();
+                selection.TypeParagraph();
+
+                // Paste template content
+                selection.Paste();
+
+                // Optional: Move selection to the end again
+                selection.EndKey(WdUnits.wdStory);
 
                 MessageBox.Show("Template inserted successfully!");
             }
@@ -973,6 +985,7 @@ namespace AbbreviationWordAddin
                 MessageBox.Show("Error inserting template: " + ex.Message);
             }
         }
+
 
 
 

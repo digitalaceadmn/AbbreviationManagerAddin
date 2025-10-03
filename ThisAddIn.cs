@@ -20,6 +20,7 @@ namespace AbbreviationWordAddin
     public partial class ThisAddIn
     {
         public bool reloadAbbrDataFromDict = false; 
+        public bool debug = false;
         private const int CHUNK_SIZE = 1000;
         string lastLoadedVersion = Properties.Settings.Default.LastLoadedAbbreviationVersion;
         string currentVersion = Properties.Settings.Default.AbbreviationDataVersion;
@@ -61,12 +62,17 @@ namespace AbbreviationWordAddin
                 {
                     userClosedTaskPanes.Add(window);
                     taskPaneOpenedOnce.Remove(window); // allow future reopen if needed
-                    System.Diagnostics.Debug.WriteLine("[DEBUG] User closed TaskPane.");
+                    if (debug) { 
+                        System.Diagnostics.Debug.WriteLine("[DEBUG] User closed TaskPane.");
+                    }
                 }
                 else
                 {
                     userClosedTaskPanes.Remove(window);
-                    System.Diagnostics.Debug.WriteLine("[DEBUG] TaskPane shown.");
+                    if (debug)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[DEBUG] TaskPane shown.");
+                    }
                 }
             };
         }
@@ -78,13 +84,15 @@ namespace AbbreviationWordAddin
 
             try
             {
-               
-                System.Windows.Forms.MessageBox.Show(
+                if (debug)
+                {
+                    System.Windows.Forms.MessageBox.Show(
                     "lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
                     "Abbreviation Loading status",
                     System.Windows.Forms.MessageBoxButtons.OK,
                     System.Windows.Forms.MessageBoxIcon.Information
                  );
+                }
 
                 var autoCorrect = Globals.ThisAddIn.Application.AutoCorrect;
                 for (int i = autoCorrect.Entries.Count; i >= 1; i--)
@@ -98,12 +106,15 @@ namespace AbbreviationWordAddin
                 if (lastLoadedVersion != currentVersion)
                 {
                     // Version changed → clear file cache
-                    System.Windows.Forms.MessageBox.Show(
+                    if (debug)
+                    {
+                        System.Windows.Forms.MessageBox.Show(
                         "Clear cache because lastLoadedVersion" + lastLoadedVersion + "currentVersion" + currentVersion,
                         "Abbreviation Loading status",
                         System.Windows.Forms.MessageBoxButtons.OK,
                         System.Windows.Forms.MessageBoxIcon.Information
                      );
+                    }
                     reloadAbbrDataFromDict = true;
                     AbbreviationManager.ClearCacheFile();
                     Properties.Settings.Default.IsAutoCorrectLoaded = false;
@@ -154,12 +165,15 @@ namespace AbbreviationWordAddin
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(
+                if (debug)
+                {
+                    System.Windows.Forms.MessageBox.Show(
                     "Error during startup: " + ex.Message,
                     "Startup Error",
                     System.Windows.Forms.MessageBoxButtons.OK,
                     System.Windows.Forms.MessageBoxIcon.Warning
                 );
+                }
             }
         }
 
@@ -174,7 +188,10 @@ namespace AbbreviationWordAddin
         {
             try
             {
-                MessageBox.Show("New document created. Name: " + Doc.Name, "Debug - NewDocument");
+                if (debug)
+                {
+                    MessageBox.Show("New document created. Name: " + Doc.Name, "Debug - NewDocument");
+                }
 
                 EnsureTaskPaneVisible(this.Application.ActiveWindow, "New Documnet");
 
@@ -182,18 +199,27 @@ namespace AbbreviationWordAddin
                 var phrases = AbbreviationManager.GetAllPhrases();
                 if (phrases != null && phrases.Any())
                 {
-                    MessageBox.Show("Loaded phrases count: " + phrases.Count(), "Debug - Phrases Loaded");
+                    if (debug)
+                    {
+                        MessageBox.Show("Loaded phrases count: " + phrases.Count(), "Debug - Phrases Loaded");
+                    }
                 }
                 else
                 {
-                    MessageBox.Show("No phrases found when creating new document.", "Debug - Phrases Missing");
+                    if (debug)
+                    {
+                        MessageBox.Show("No phrases found when creating new document.", "Debug - Phrases Missing");
+                    }
                 }
 
                 loadAllAbbreviaitons();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in Application_NewDocument: " + ex.Message, "Error");
+                if (debug)
+                {
+                    MessageBox.Show("Error in Application_NewDocument: " + ex.Message, "Error");
+                }
             }
         }
 
@@ -254,12 +280,15 @@ namespace AbbreviationWordAddin
             {
                 if (reloadAbbrDataFromDict)
                 {
-                    System.Windows.Forms.MessageBox.Show(
+                    if (debug)
+                    {
+                        System.Windows.Forms.MessageBox.Show(
                                "Loading Latest Abbreviation",
                                "AutoCorrect Entries",
                                System.Windows.Forms.MessageBoxButtons.OK,
                                System.Windows.Forms.MessageBoxIcon.Information
                            );
+                    }
                     foreach (var abbreviation in AbbreviationManager.GetAllPhrases())
                     {
                         try
@@ -291,12 +320,15 @@ namespace AbbreviationWordAddin
 
                     if (loadingStatusMessage != "")
                     {
-                        System.Windows.Forms.MessageBox.Show(
+                        if (debug)
+                        {
+                            System.Windows.Forms.MessageBox.Show(
                             "Abbreviations Loaded. Below phrases were already present in the abbreviation list: " + loadingStatusMessage,
                             "Abbreviation Loading status",
                             System.Windows.Forms.MessageBoxButtons.OK,
                             System.Windows.Forms.MessageBoxIcon.Information
                         );
+                        }
                     }
                 }
             } 
@@ -364,13 +396,19 @@ namespace AbbreviationWordAddin
             {
                 AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
                 currentPane.Visible = true;
-                MessageBox.Show("Abbreviation Replacement Enabled", "Status");
+                if (debug)
+                {
+                    MessageBox.Show("Abbreviation Replacement Enabled", "Status");
+                }
             }
             else
             {
                 AbbreviationManager.ClearAutoCorrectCache();
                 currentPane.Visible = false;
-                MessageBox.Show("Abbreviation Replacement Disabled", "Status");
+                if (debug)
+                {
+                    MessageBox.Show("Abbreviation Replacement Disabled", "Status");
+                }
             }
         }
 
@@ -938,7 +976,11 @@ namespace AbbreviationWordAddin
 
                 if (paneControl == null)
                 {
-                    System.Windows.Forms.MessageBox.Show("Failed to get SuggestionPaneControl for active window!", "Error");
+                    if (debug)
+                    {
+                        System.Windows.Forms.MessageBox.Show("Failed to get SuggestionPaneControl for active window!", "Error");
+                    }
+
                     return;
                 }
 
@@ -946,7 +988,10 @@ namespace AbbreviationWordAddin
 
                 if (!matches.Any())
                 {
-                    System.Windows.Forms.MessageBox.Show("No matches found.", "Debug");
+                    if (debug)
+                    {
+                        System.Windows.Forms.MessageBox.Show("No matches found.", "Debug");
+                    }
                     return;
                 }
 
@@ -958,7 +1003,10 @@ namespace AbbreviationWordAddin
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show("Error in ReplaceAllAbbreviations: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                if (debug)
+                {
+                    System.Windows.Forms.MessageBox.Show("Error in ReplaceAllAbbreviations: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                }
             }
         }
 
@@ -988,7 +1036,10 @@ namespace AbbreviationWordAddin
             var doc = app.ActiveDocument;
             if (doc == null)
             {
-                MessageBox.Show("No active document found.");
+                if (debug)
+                {
+                    MessageBox.Show("No active document found.");
+                }
                 return;
             }
 
@@ -1023,8 +1074,11 @@ namespace AbbreviationWordAddin
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error replacing abbreviation: " + ex.Message);
-                System.Diagnostics.Debug.WriteLine("Error replacing abbreviation: " + ex.Message);
+                if (debug)
+                {
+                    MessageBox.Show("Error replacing abbreviation: " + ex.Message);
+                    System.Diagnostics.Debug.WriteLine("Error replacing abbreviation: " + ex.Message);
+                }
             }
         }
 
