@@ -4,6 +4,8 @@
         <tabs>
             <tab idMso="TabAddIns" />
             <tab id="AppxC" label="JSSD">
+				
+				
                 <group id="group2" label="Abbreviation Tools">
                     <button id="btnEnable" onAction="btnEnable_Click" label="Enable Abbreviation" showImage="false" />
                     <button id="btnDisable" onAction="btnDisable_Click" label="Disable Abbreviation" showImage="false" />
