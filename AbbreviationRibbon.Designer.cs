@@ -154,8 +154,8 @@ namespace AbbreviationWordAddin
             this.group1.Items.Add(this.btnReplaceAll);
             this.group1.Items.Add(this.separator2);
             this.group1.Items.Add(this.btnHighlightAll);
-            this.group1.Items.Add(this.separator3);
-            this.group1.Items.Add(this.highLightLike);
+            // this.group1.Items.Add(this.separator3);
+            // this.group1.Items.Add(this.highLightLike);
             this.group1.Label = "Replace / Highlight";
             this.group1.Name = "group1";
             // 
