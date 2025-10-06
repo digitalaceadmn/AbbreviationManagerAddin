@@ -950,8 +950,6 @@ namespace AbbreviationWordAddin
             {
                 var tempDoc = Globals.ThisAddIn.Application.Documents.Open(templatePath, Visible: false);
 
-                // Copy entire content
-                tempDoc.Content.WholeStory();
                 tempDoc.Content.Copy();
 
                 tempDoc.Close(false);
@@ -963,20 +961,18 @@ namespace AbbreviationWordAddin
 
                 var selection = Globals.ThisAddIn.Application.Selection;
 
-                // Move selection to the end of the document
-                selection.EndKey(WdUnits.wdStory);
+                selection.HomeKey(WdUnits.wdStory);
 
-                // Optional: Insert a few line breaks before pasting
                 selection.TypeParagraph();
                 selection.TypeParagraph();
 
-                // Paste template content
                 selection.Paste();
 
-                // Optional: Move selection to the end again
-                selection.EndKey(WdUnits.wdStory);
+                selection.TypeParagraph();
 
-                MessageBox.Show("Template inserted successfully!");
+                selection.HomeKey(WdUnits.wdStory);
+
+                MessageBox.Show("Template inserted successfully at the top!");
             }
             catch (Exception ex)
             {
