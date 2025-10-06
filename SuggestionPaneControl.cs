@@ -102,26 +102,20 @@ namespace AbbreviationWordAddin
         private List<(string Word, string Replacement)> lastSuggestions =
      new List<(string Word, string Replacement)>();
 
-        public void ShowSuggestions(List<(string Word, string Replacement)> suggestions)
+        public void ShowSuggestions(List<(string Word, string Replacement)> suggestions, Mode mode)
         {
             if (isSuggestionListFrozen)
-            {
-                Debug.WriteLine("Skipping suggestion refresh because list is frozen.");
                 return;
-            }
 
-            // ✅ Skip refresh if suggestions are identical
             if (lastSuggestions.Count == suggestions.Count &&
                 !lastSuggestions.Except(suggestions).Any())
-            {
                 return;
-            }
 
             lastSuggestions = suggestions;
 
-            if (CurrentMode == Mode.Abbreviation)
+            if (mode == Mode.Abbreviation)
             {
-                listViewAbbrev.BeginUpdate(); // avoid flicker
+                listViewAbbrev.BeginUpdate();
                 listViewAbbrev.Items.Clear();
                 foreach (var suggestion in suggestions)
                 {
@@ -131,9 +125,9 @@ namespace AbbreviationWordAddin
                 }
                 listViewAbbrev.EndUpdate();
             }
-            else if (CurrentMode == Mode.Reverse)
+            else if (mode == Mode.Reverse)
             {
-                listViewReverse.BeginUpdate(); // avoid flicker
+                listViewReverse.BeginUpdate();
                 listViewReverse.Items.Clear();
                 foreach (var suggestion in suggestions)
                 {
@@ -144,6 +138,7 @@ namespace AbbreviationWordAddin
                 listViewReverse.EndUpdate();
             }
         }
+
 
 
         // --- Set input text depending on tab ---
