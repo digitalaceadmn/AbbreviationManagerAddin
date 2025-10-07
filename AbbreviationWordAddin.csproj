@@ -305,6 +305,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <None Include="Abbreviation.pfx" />
+    <None Include="AbbreviationWordAddin_1_TemporaryKey.pfx" />
     <None Include="AbbreviationWordAddin_TemporaryKey.pfx" />
     <None Include="app.config" />
     <EmbeddedResource Include="Help\Help.docx" />
@@ -425,10 +426,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>Abbreviation.pfx</ManifestKeyFile>
+    <ManifestKeyFile>AbbreviationWordAddin_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>26C4413584FB74155CC9CF25FED45216905FFFE6</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>BA84039CC4B50B4C59D93B43E5109AC658FB62A3</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
