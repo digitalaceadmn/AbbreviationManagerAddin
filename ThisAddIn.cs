@@ -1242,7 +1242,10 @@ namespace AbbreviationWordAddin
                                                      .ToList();
 
                     // Build regex once
-                    string pattern = string.Join("|", phrases.Select(Regex.Escape));
+                    //string pattern = string.Join("|", phrases.Select(Regex.Escape));
+                    //Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                    string pattern = @"(?<!\w)(" + string.Join("|", phrases.Select(Regex.Escape)) + @")(?!\w)";
                     Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                     // Count total matches for progress bar
@@ -1685,7 +1688,8 @@ namespace AbbreviationWordAddin
                         .ToList();
                 }
 
-                currentControl.ShowSuggestions(matches);
+                var mode = currentControl.CurrentMode;
+                currentControl.ShowSuggestions(matches, mode);
             }
             catch (Exception ex)
             {
@@ -1863,21 +1867,18 @@ namespace AbbreviationWordAddin
 
             SuggestionPaneControl currentControl = null;
 
-            // Only open TaskPane once if user hasn't closed it
             if (!userClosedTaskPanes.Contains(window) && !taskPaneOpenedOnce.Contains(window))
             {
                 currentControl = EnsureTaskPaneVisible(window, "Debouncer");
                 if (currentControl != null)
                 {
                     var pane = taskPanes[window];
-                    pane.Visible = true; // show it **only once**
+                    pane.Visible = true;
                     taskPaneOpenedOnce.Add(window);
-                    System.Diagnostics.Debug.WriteLine("[DEBUG] TaskPane opened by Debouncer.");
                 }
             }
             else
             {
-                // Pane already exists, get reference without showing
                 taskPanes.TryGetValue(window, out var pane);
                 currentControl = pane?.Control as SuggestionPaneControl;
             }
@@ -1892,7 +1893,6 @@ namespace AbbreviationWordAddin
 
                 Word.Range selRange = sel.Range.Duplicate;
 
-                // --- existing logic for suggestions ---
                 int wordsChecked = 0;
                 Word.Range testRange = selRange.Duplicate;
 
@@ -1901,14 +1901,12 @@ namespace AbbreviationWordAddin
                     if (testRange.Start == 0) break;
 
                     testRange.MoveStart(Word.WdUnits.wdWord, -1);
-                    string candidate = testRange.Text;
+                    string candidate = testRange.Text.Trim();
                     if (string.IsNullOrEmpty(candidate))
                     {
                         wordsChecked++;
                         continue;
                     }
-
-                    candidate = candidate.Trim();
 
                     if (candidate.Contains("\r") || candidate.Contains("\n"))
                     {
@@ -1916,18 +1914,13 @@ namespace AbbreviationWordAddin
                         break;
                     }
 
-                    if (string.IsNullOrEmpty(candidate))
+                    if (candidate.Length < 3)
                     {
                         wordsChecked++;
                         continue;
                     }
 
-                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse || candidate.Length < 3)
-                    {
-                        wordsChecked++;
-                        continue;
-                    }
-
+                    // Check last replaced word logic
                     if (!string.IsNullOrEmpty(lastReplacedShortForm) && !string.IsNullOrEmpty(lastReplacedFullForm))
                     {
                         if (string.Equals(candidate, lastReplacedShortForm, StringComparison.InvariantCultureIgnoreCase) &&
@@ -1943,11 +1936,24 @@ namespace AbbreviationWordAddin
                         return;
                     }
 
-                    string lowerCandidate = candidate.ToLowerInvariant();
+                    List<(string Word, string Replacement)> matches;
 
-                    var matches = trie.GetWordsWithPrefix(lowerCandidate)
-                        .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                        .ToList();
+                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
+                    {
+                        // Reverse mode: search full forms
+                        matches = AbbreviationManager.GetAllPhrases()
+                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                            .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                        p.Replacement.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+                            .ToList();
+                    }
+                    else
+                    {
+                        // Abbreviation mode: search trie
+                        matches = trie.GetWordsWithPrefix(candidate.ToLowerInvariant())
+                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                            .ToList();
+                    }
 
                     if (matches.Count == 0)
                     {
@@ -1955,30 +1961,11 @@ namespace AbbreviationWordAddin
                         continue;
                     }
 
-                    bool hasExact = matches.Any(p => string.Equals(p.Word, candidate, StringComparison.InvariantCultureIgnoreCase));
-                    bool hasLonger = matches.Any(p => p.Word.Split(' ').Length > candidate.Split(' ').Length);
-
-                    if (hasExact && !hasLonger)
-                    {
-                        if (IsLastCharSpace(sel))
-                        {
-                            // ❌ COMMENTED: Auto-replace logic is disabled
-                            /*
-                            ReplaceWithFullForm(candidate, testRange, sel);
-                            lastReplacedShortForm = candidate;
-                            lastReplacedFullForm = GetFullFormFor(candidate);
-                            lastUndoneWord = null;
-                            */
-                        }
-
-                        return;
-                    }
-                    else
-                    {
-                        currentControl.SetInputText(candidate);
-                        currentControl.ShowSuggestions(matches);
-                        return;
-                    }
+                    // Always show suggestions in the task pane
+                    currentControl.SetInputText(candidate);
+                    var mode = currentControl.CurrentMode;
+                    currentControl.ShowSuggestions(matches, mode);
+                    return;
                 }
 
                 lastUndoneWord = null;
@@ -1993,6 +1980,7 @@ namespace AbbreviationWordAddin
                 );
             }
         }
+
 
 
 
