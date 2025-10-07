@@ -1867,15 +1867,10 @@ namespace AbbreviationWordAddin
 
             SuggestionPaneControl currentControl = null;
 
-            if (!userClosedTaskPanes.Contains(window) && !taskPaneOpenedOnce.Contains(window))
+            // Get or create task pane control
+            if (!taskPanes.ContainsKey(window))
             {
                 currentControl = EnsureTaskPaneVisible(window, "Debouncer");
-                if (currentControl != null)
-                {
-                    var pane = taskPanes[window];
-                    pane.Visible = true;
-                    taskPaneOpenedOnce.Add(window);
-                }
             }
             else
             {
@@ -1885,7 +1880,8 @@ namespace AbbreviationWordAddin
 
             try
             {
-                if (userClosedTaskPanes.Contains(window) || currentControl == null)
+                // If control doesn't exist, can't proceed
+                if (currentControl == null)
                     return;
 
                 Word.Selection sel = this.Application.Selection;
@@ -1936,35 +1932,56 @@ namespace AbbreviationWordAddin
                         return;
                     }
 
-                    List<(string Word, string Replacement)> matches;
+                    List<(string Word, string Replacement)> matchesAbbrev = null;
+                    List<(string Word, string Replacement)> matchesReverse = null;
 
-                    if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
-                    {
-                        // Reverse mode: search full forms
-                        matches = AbbreviationManager.GetAllPhrases()
-                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                            .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
-                                        p.Replacement.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
-                            .ToList();
-                    }
-                    else
-                    {
-                        // Abbreviation mode: search trie
-                        matches = trie.GetWordsWithPrefix(candidate.ToLowerInvariant())
-                            .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
-                            .ToList();
-                    }
+                    // Search in Abbreviation mode (phrase -> abbreviation)
+                    matchesAbbrev = trie.GetWordsWithPrefix(candidate.ToLowerInvariant())
+                        .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                        .ToList();
 
-                    if (matches.Count == 0)
+                    // Search in Reverse mode (abbreviation -> phrase)
+                    matchesReverse = AbbreviationManager.GetAllPhrases()
+                        .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
+                        .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                    p.Replacement.StartsWith(candidate, StringComparison.InvariantCultureIgnoreCase))
+                        .ToList();
+
+                    // Check if we have matches in either mode
+                    bool hasAbbrevMatches = matchesAbbrev != null && matchesAbbrev.Count > 0;
+                    bool hasReverseMatches = matchesReverse != null && matchesReverse.Count > 0;
+
+                    if (!hasAbbrevMatches && !hasReverseMatches)
                     {
                         wordsChecked++;
                         continue;
                     }
 
-                    // Always show suggestions in the task pane
+                    // KEY CHANGE: Show task pane when matches are found in EITHER mode
+                    if (taskPanes.TryGetValue(window, out var taskPane))
+                    {
+                        if (!taskPane.Visible)
+                        {
+                            taskPane.Visible = true;
+                            // Remove from userClosedTaskPanes since we're reopening it due to matches
+                            userClosedTaskPanes.Remove(window);
+                        }
+                    }
+
+                    // Show suggestions based on current mode
                     currentControl.SetInputText(candidate);
                     var mode = currentControl.CurrentMode;
-                    currentControl.ShowSuggestions(matches, mode);
+
+                    // Display matches based on which mode the pane is in
+                    if (mode == SuggestionPaneControl.Mode.Reverse)
+                    {
+                        currentControl.ShowSuggestions(matchesReverse, mode);
+                    }
+                    else
+                    {
+                        currentControl.ShowSuggestions(matchesAbbrev, mode);
+                    }
+
                     return;
                 }
 
