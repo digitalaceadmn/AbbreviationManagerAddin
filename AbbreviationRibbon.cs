@@ -202,7 +202,7 @@ namespace AbbreviationWordAddin
 
             Microsoft.Office.Interop.Word.Document helpDoc = app.Documents.Open(
                 FileName: helpPath,
-                ReadOnly: true,   // open as read-only
+                ReadOnly: true,   
                 Visible: true
             );
 
@@ -210,8 +210,8 @@ namespace AbbreviationWordAddin
             {
                 helpDoc.Protect(
                     Type: Microsoft.Office.Interop.Word.WdProtectionType.wdAllowOnlyReading,
-                    NoReset: true,       // do not reset existing protection
-                    Password: "1234"         // optional: set password if needed
+                    NoReset: true,      
+                    Password: "1234"        
                 );
             }
 
