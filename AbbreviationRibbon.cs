@@ -156,13 +156,15 @@ namespace AbbreviationWordAddin
             var window = Globals.ThisAddIn.Application.ActiveWindow;
             if (window == null) return;
 
+            // If user had manually closed it before, allow reopen
+            Globals.ThisAddIn.userClosedTaskPanes.Remove(window);
+
             var control = Globals.ThisAddIn.EnsureTaskPaneVisible(window, "Show Suggestion BTN");
             if (control == null) return;
 
             if (Globals.ThisAddIn.taskPanes.TryGetValue(window, out var pane))
             {
-                pane.Visible = true; 
-                Globals.ThisAddIn.userClosedTaskPanes.Remove(window);
+                pane.Visible = true;
             }
         }
 

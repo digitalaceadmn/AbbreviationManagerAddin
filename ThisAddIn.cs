@@ -1661,7 +1661,7 @@ namespace AbbreviationWordAddin
         /// <summary>
         /// Event: User typed text in the pane input box.
         /// </summary>
-        private void SuggestionPaneControl_OnTextChanged(string inputText)
+        public void SuggestionPaneControl_OnTextChanged(string inputText)
         {
             try
             {
@@ -1676,10 +1676,14 @@ namespace AbbreviationWordAddin
                 if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
                 {
                     matches = AbbreviationManager.GetAllPhrases()
-                        .Select(abbrev => (Word: abbrev, Replacement: AbbreviationManager.GetAbbreviation(abbrev)))
-                        .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
-                                    p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
-                        .ToList();
+                       .Select(abbrev =>
+                       {
+                           string full = AbbreviationManager.GetAbbreviation(abbrev);
+                           return (Word: abbrev, Replacement: full);
+                       })
+                       .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                   p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
+                       .ToList();
                 }
                 else
                 {
@@ -1973,13 +1977,13 @@ namespace AbbreviationWordAddin
                     var mode = currentControl.CurrentMode;
 
                     // Display matches based on which mode the pane is in
-                    if (mode == SuggestionPaneControl.Mode.Reverse)
+                    if (mode == SuggestionPaneControl.Mode.Abbreviation)
+                    {
+                        currentControl.ShowSuggestions(matchesAbbrev, mode); 
+                    }
+                    else if (mode == SuggestionPaneControl.Mode.Reverse)
                     {
                         currentControl.ShowSuggestions(matchesReverse, mode);
-                    }
-                    else
-                    {
-                        currentControl.ShowSuggestions(matchesAbbrev, mode);
                     }
 
                     return;

@@ -20,11 +20,13 @@ namespace AbbreviationWordAddin
 
             tabControlModes.SelectedIndexChanged += TabControlModes_SelectedIndexChanged;
 
-            // --- Setup Tab 1 (Abbreviations) ---
             this.textBoxInput.TextChanged += (s, e) =>
             {
-                if (tabControlModes.SelectedTab == tabPageAbbreviation)
+                if (tabControlModes.SelectedTab == tabPageAbbreviation ||
+                    tabControlModes.SelectedTab == tabPageReverse)
+                {
                     OnTextChanged?.Invoke(textBoxInput.Text);
+                }
             };
             this.listViewAbbrev.View = System.Windows.Forms.View.Details;
             this.listViewAbbrev.FullRowSelect = true;
@@ -34,12 +36,12 @@ namespace AbbreviationWordAddin
             this.listViewAbbrev.MouseEnter += (s, e) => isSuggestionListFrozen = true;
             this.listViewAbbrev.MouseLeave += (s, e) => isSuggestionListFrozen = false;
 
-            // --- Setup Tab 2 (Reverse Abbreviations) ---
-            this.textBoxInput.TextChanged += (s, e) =>
-            {
-                if (tabControlModes.SelectedTab == tabPageReverse)
-                    OnTextChanged?.Invoke(textBoxInput.Text);
-            };
+            //// --- Setup Tab 2 (Reverse Abbreviations) ---
+            //this.textBoxInput.TextChanged += (s, e) =>
+            //{
+            //    if (tabControlModes.SelectedTab == tabPageReverse)
+            //        OnTextChanged?.Invoke(textBoxInput.Text);
+            //};
             this.listViewReverse.View = System.Windows.Forms.View.Details;
             this.listViewReverse.FullRowSelect = true;
             this.listViewReverse.Columns.Add("Replacement", 200);
@@ -144,9 +146,7 @@ namespace AbbreviationWordAddin
         // --- Set input text depending on tab ---
         public void SetInputText(string text)
         {
-            if (CurrentMode == Mode.Abbreviation)
-                textBoxInput.Text = text;
-            else if (CurrentMode == Mode.Reverse)
+            if (CurrentMode == Mode.Abbreviation || CurrentMode == Mode.Reverse)
                 textBoxInput.Text = text;
         }
 
@@ -327,8 +327,9 @@ namespace AbbreviationWordAddin
             txtReplacement.Text = "";
         }
 
-       
-
-
+        private void textBoxInput_TextChanged(object sender, EventArgs e)
+        {
+            Globals.ThisAddIn.SuggestionPaneControl_OnTextChanged(textBoxInput.Text);
+        }
     }
 }

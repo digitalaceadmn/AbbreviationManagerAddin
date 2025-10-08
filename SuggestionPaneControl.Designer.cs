@@ -69,6 +69,7 @@ namespace AbbreviationWordAddin
             this.textBoxInput.Name = "textBoxInput";
             this.textBoxInput.Size = new System.Drawing.Size(380, 22);
             this.textBoxInput.TabIndex = 1;
+            this.textBoxInput.TextChanged += new System.EventHandler(this.textBoxInput_TextChanged);
             // 
             // tabControlModes
             // 
