@@ -202,13 +202,24 @@ namespace AbbreviationWordAddin
 
             Microsoft.Office.Interop.Word.Document helpDoc = app.Documents.Open(
                 FileName: helpPath,
-                ReadOnly: true,
+                ReadOnly: true,   // open as read-only
                 Visible: true
             );
+
+            if (!helpDoc.ProtectionType.HasFlag(Microsoft.Office.Interop.Word.WdProtectionType.wdAllowOnlyReading))
+            {
+                helpDoc.Protect(
+                    Type: Microsoft.Office.Interop.Word.WdProtectionType.wdAllowOnlyReading,
+                    NoReset: true,       // do not reset existing protection
+                    Password: "1234"         // optional: set password if needed
+                );
+            }
 
             helpDoc.Saved = true;
         }
 
-        
+
+
+
     }
 }

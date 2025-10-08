@@ -13,6 +13,7 @@ namespace AbbreviationWordAddin
         public event Action<string> OnTextChanged;
         public event Action<string, string> OnSuggestionAccepted;
         private bool isSuggestionListFrozen = false;
+        private bool suggestionFROMInput = false;
 
         public SuggestionPaneControl()
         {
@@ -25,6 +26,8 @@ namespace AbbreviationWordAddin
                 if (tabControlModes.SelectedTab == tabPageAbbreviation ||
                     tabControlModes.SelectedTab == tabPageReverse)
                 {
+                    if (CurrentMode == Mode.Reverse)
+                        suggestionFROMInput = true; // <-- ensure suggestions are shown
                     OnTextChanged?.Invoke(textBoxInput.Text);
                 }
             };
@@ -146,9 +149,12 @@ namespace AbbreviationWordAddin
         // --- Set input text depending on tab ---
         public void SetInputText(string text)
         {
-            if (CurrentMode == Mode.Abbreviation || CurrentMode == Mode.Reverse)
-                textBoxInput.Text = text;
+            if (CurrentMode == Mode.Reverse && !string.IsNullOrEmpty(textBoxInput.Text))
+                return; // user is typing, don't reset
+
+            //textBoxInput.Text = text;
         }
+
 
         // --- Load dictionary from Excel ---
         public void LoadDictionary(List<(string Abbrev, string FullForm)> entries)
@@ -191,6 +197,13 @@ namespace AbbreviationWordAddin
                     .ToList();
 
                 LoadDictionary(entries);
+                Globals.ThisAddIn.suggestionFROMInput = false;
+            } else if (CurrentMode == Mode.Reverse)
+            {
+                Globals.ThisAddIn.suggestionFROMInput = true;
+            } else if (CurrentMode == Mode.Abbreviation)
+            {
+                Globals.ThisAddIn.suggestionFROMInput = false;
             }
         }
 

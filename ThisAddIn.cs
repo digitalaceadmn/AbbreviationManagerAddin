@@ -53,6 +53,7 @@ namespace AbbreviationWordAddin
         public Dictionary<Word.Window, CustomTaskPane> taskPanes = new Dictionary<Word.Window, CustomTaskPane>();
         public HashSet<Word.Window> userClosedTaskPanes = new HashSet<Word.Window>();
         public HashSet<Word.Window> taskPaneOpenedOnce = new HashSet<Word.Window>();
+        public bool suggestionFROMInput = false;
 
         private void TrackTaskPaneVisibility(CustomTaskPane pane, Word.Window window)
         {
@@ -1671,22 +1672,26 @@ namespace AbbreviationWordAddin
                 var currentControl = EnsureTaskPaneVisible(this.Application.ActiveWindow, "onTextChanges");
                 if (currentControl == null) return;
 
-                List<(string Word, string Replacement)> matches;
+                List<(string Word, string Replacement)> matches = new List<(string Word, string Replacement)>();
 
                 if (currentControl.CurrentMode == SuggestionPaneControl.Mode.Reverse)
                 {
-                    matches = AbbreviationManager.GetAllPhrases()
-                       .Select(abbrev =>
-                       {
-                           string full = AbbreviationManager.GetAbbreviation(abbrev);
-                           return (Word: abbrev, Replacement: full);
-                       })
-                       .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
-                                   p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
-                       .ToList();
+                    if (!string.IsNullOrEmpty(inputText))
+                    {
+                        matches = AbbreviationManager.GetAllPhrases()
+                            .Select(abbrev =>
+                            {
+                                string full = AbbreviationManager.GetAbbreviation(abbrev);
+                                return (Word: abbrev, Replacement: full);
+                            })
+                            .Where(p => !string.IsNullOrEmpty(p.Replacement) &&
+                                        p.Replacement.StartsWith(inputText, StringComparison.InvariantCultureIgnoreCase))
+                            .ToList();
+                    }
                 }
                 else
                 {
+                    // Abbreviation and Dictionary mode
                     matches = trie.GetWordsWithPrefix(inputText.ToLowerInvariant())
                         .Select(p => (Word: p, Replacement: AbbreviationManager.GetAbbreviation(p)))
                         .ToList();
@@ -1697,9 +1702,11 @@ namespace AbbreviationWordAddin
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show("Error in OnTextChanged: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show("Error in OnTextChanged: " + ex.Message + "\n" + ex.StackTrace,
+                    "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
             }
         }
+
 
 
 
