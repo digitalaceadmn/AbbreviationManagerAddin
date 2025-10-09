@@ -1989,11 +1989,15 @@ namespace AbbreviationWordAddin
                     // Display matches based on which mode the pane is in
                     if (mode == SuggestionPaneControl.Mode.Abbreviation)
                     {
+                        // Normal mode: Show abbreviation suggestions from Word document typing
                         currentControl.ShowSuggestions(matchesAbbrev, mode); 
                     }
                     else if (mode == SuggestionPaneControl.Mode.Reverse)
                     {
-                        currentControl.ShowSuggestions(matchesReverse, mode);
+                        // Reverse mode: DO NOT show suggestions from Word document typing
+                        // Reverse suggestions should only come from input box typing
+                        // Keep existing suggestions in reverse tab, don't update them
+                        return; // Exit without updating suggestions
                     }
 
                     return;
