@@ -196,27 +196,75 @@ namespace AbbreviationWordAddin
 
         private void button2_Click(object sender, RibbonControlEventArgs e)
         {
-            var app = Globals.ThisAddIn.Application;
-
-            string helpPath = ExtractTemplateToLocal("AbbreviationWordAddin.Help.Help.docx", "Help.docx");
-
-            Microsoft.Office.Interop.Word.Document helpDoc = app.Documents.Open(
-                FileName: helpPath,
-                ReadOnly: true,   
-                Visible: true
-            );
-
-            if (!helpDoc.ProtectionType.HasFlag(Microsoft.Office.Interop.Word.WdProtectionType.wdAllowOnlyReading))
+            try
             {
-                helpDoc.Protect(
-                    Type: Microsoft.Office.Interop.Word.WdProtectionType.wdAllowOnlyReading,
-                    NoReset: true,      
-                    Password: "1234"        
+                var window = Globals.ThisAddIn.Application.ActiveWindow;
+                if (window == null)
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                        "No active Word window found. Please ensure Word is running and has a document open.",
+                        "Help - Window Required",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Information
+                    );
+                    return;
+                }
+
+                // Check if help task pane already exists for this window
+                Microsoft.Office.Tools.CustomTaskPane helpTaskPane = null;
+                
+                // Look for existing help task pane
+                foreach (Microsoft.Office.Tools.CustomTaskPane pane in Globals.ThisAddIn.CustomTaskPanes)
+                {
+                    if (pane.Title == "📖 Help - Abbreviation Manager" && pane.Window == window)
+                    {
+                        helpTaskPane = pane;
+                        break;
+                    }
+                }
+
+                // Create new help task pane if it doesn't exist
+                if (helpTaskPane == null)
+                {
+                    var helpControl = new HelpTaskPaneControl();
+                    helpTaskPane = Globals.ThisAddIn.CustomTaskPanes.Add(
+                        helpControl,
+                        "📖 Help - Abbreviation Manager",
+                        window
+                    );
+                    
+                    helpTaskPane.Width = 450;
+                    helpTaskPane.DockPosition = Microsoft.Office.Core.MsoCTPDockPosition.msoCTPDockPositionRight;
+                }
+
+                // Show the help task pane
+                helpTaskPane.Visible = true;
+                
+                // Show confirmation message
+                System.Windows.Forms.MessageBox.Show(
+                    "📖 HELP DISPLAYED IN TASK PANE 📖\n\n" +
+                    "✓ Help content is now displayed in the task pane\n" +
+                    "✓ Content is completely read-only and non-editable\n" +
+                    "✓ Always accessible while working in Word\n" +
+                    "✓ No separate document windows needed\n\n" +
+                    "The help pane will remain open for easy reference.",
+                    "Help Task Pane - Now Available",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Information
                 );
             }
-
-            helpDoc.Saved = true;
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(
+                    "Error displaying help task pane: " + ex.Message + "\n\n" +
+                    "Please try again or restart Word if the problem persists.",
+                    "Help Task Pane Error",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Error
+                );
+            }
         }
+
 
 
 

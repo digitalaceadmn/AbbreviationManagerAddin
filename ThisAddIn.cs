@@ -82,9 +82,9 @@ namespace AbbreviationWordAddin
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-
             try
             {
+                
                 if (debug)
                 {
                     System.Windows.Forms.MessageBox.Show(
@@ -343,6 +343,9 @@ namespace AbbreviationWordAddin
             //AbbreviationManager.ClearAutoCorrectCache();
 
         }
+
+
+        
 
         //public void ToggleAbbreviationReplacement(bool enable)
         //{
