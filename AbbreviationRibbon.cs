@@ -13,6 +13,25 @@ namespace AbbreviationWordAddin
        
         private void AbbreviationRibbon_Load(object sender, RibbonUIEventArgs e)
         {
+            try
+            {
+                // Manually set the JSSD tab label to ensure it's visible in new Word versions
+                this.JSSD.Label = "JSSD";
+                this.JSSD.Visible = true;
+                
+                // Ensure all groups are visible
+                this.group1.Visible = true; // Replace / Highlight
+                this.group2.Visible = false; // Enable / Disable  
+                this.group3.Visible = true; // Template / Show Suggestions
+                this.group4.Visible = true; // Help
+                
+                // Properties set - no explicit refresh needed
+            }
+            catch (Exception)
+            {
+                // Silent catch - don't interrupt normal loading
+            }
+            
             var application = Globals.ThisAddIn.Application;
             AutoCorrect autoCorrect = application.AutoCorrect;
             if (autoCorrect.ReplaceText)
@@ -240,18 +259,6 @@ namespace AbbreviationWordAddin
                 // Show the help task pane
                 helpTaskPane.Visible = true;
                 
-                // Show confirmation message
-                System.Windows.Forms.MessageBox.Show(
-                    "📖 HELP DISPLAYED IN TASK PANE 📖\n\n" +
-                    "✓ Help content is now displayed in the task pane\n" +
-                    "✓ Content is completely read-only and non-editable\n" +
-                    "✓ Always accessible while working in Word\n" +
-                    "✓ No separate document windows needed\n\n" +
-                    "The help pane will remain open for easy reference.",
-                    "Help Task Pane - Now Available",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Information
-                );
             }
             catch (Exception ex)
             {
@@ -265,9 +272,65 @@ namespace AbbreviationWordAddin
             }
         }
 
-
-
-
+        /// <summary>
+        /// Public method to force refresh and ensure JSSD tab visibility
+        /// Call this method if the JSSD tab is not visible in newer Word versions
+        /// </summary>
+        public void ForceJSSDTabVisible()
+        {
+            try
+            {
+                // Force set the JSSD tab properties
+                if (this.JSSD != null)
+                {
+                    this.JSSD.Label = "JSSD";
+                    this.JSSD.Visible = true;
+                }
+                
+                // Make sure all groups are visible
+                if (this.group1 != null) this.group1.Visible = true;
+                if (this.group2 != null) this.group2.Visible = true;
+                if (this.group3 != null) this.group3.Visible = true;
+                if (this.group4 != null) this.group4.Visible = true;
+            }
+            catch (Exception)
+            {
+                // Silent catch - don't show error messages during normal operation
+            }
+        }
+        
+        public void ForceJSSDTabVisibleWithMessage()
+        {
+            try
+            {
+                ForceJSSDTabVisible();
+                System.Windows.Forms.MessageBox.Show("JSSD tab has been refreshed and should now be visible.", "Ribbon Refresh", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error refreshing JSSD tab: " + ex.Message, "Ribbon Refresh Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+        }
+        
+        public void TestRibbonAccess()
+        {
+            try
+            {
+                // Simple test to verify ribbon is accessible
+                string tabName = this.JSSD?.Label ?? "Not Found";
+                bool tabVisible = this.JSSD?.Visible ?? false;
+                
+                System.Windows.Forms.MessageBox.Show(
+                    $"JSSD Tab Status:\nLabel: {tabName}\nVisible: {tabVisible}\n\nIf visible is False, the tab may be hidden by Word.", 
+                    "Ribbon Status Test", 
+                    System.Windows.Forms.MessageBoxButtons.OK, 
+                    System.Windows.Forms.MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error testing ribbon: " + ex.Message, "Test Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+        }
 
     }
 }

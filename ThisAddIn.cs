@@ -2095,6 +2095,29 @@ namespace AbbreviationWordAddin
 
 
 
+        /// <summary>
+        /// Public method to force JSSD ribbon tab visibility - can be called from outside
+        /// </summary>
+        public void ForceJSSDRibbonVisible()
+        {
+            try
+            {
+                var ribbonTab = Globals.Ribbons?.AbbreviationRibbon;
+                if (ribbonTab != null)
+                {
+                    ribbonTab.ForceJSSDTabVisible();
+                }
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("JSSD ribbon tab not found. Please restart Word.", "Ribbon Not Found", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Error forcing JSSD tab visibility: " + ex.Message, "Ribbon Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+        }
+
         #region VSTO generated code
 
         /// <summary>
