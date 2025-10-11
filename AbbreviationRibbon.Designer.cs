@@ -963,9 +963,6 @@ namespace AbbreviationWordAddin
 
                 selection.HomeKey(WdUnits.wdStory);
 
-                selection.TypeParagraph();
-                selection.TypeParagraph();
-
                 selection.Paste();
 
                 selection.TypeParagraph();

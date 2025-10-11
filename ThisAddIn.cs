@@ -1972,15 +1972,15 @@ namespace AbbreviationWordAddin
                     }
 
                     // KEY CHANGE: Show task pane when matches are found in EITHER mode
-                    if (taskPanes.TryGetValue(window, out var taskPane))
-                    {
-                        if (!taskPane.Visible)
-                        {
-                            taskPane.Visible = true;
-                            // Remove from userClosedTaskPanes since we're reopening it due to matches
-                            userClosedTaskPanes.Remove(window);
-                        }
-                    }
+                    //if (taskPanes.TryGetValue(window, out var taskPane))
+                    //{
+                    //    if (!taskPane.Visible)
+                    //    {
+                    //        taskPane.Visible = true;
+                    //        // Remove from userClosedTaskPanes since we're reopening it due to matches
+                    //        userClosedTaskPanes.Remove(window);
+                    //    }
+                    //}
 
                     // Show suggestions based on current mode
                     currentControl.SetInputText(candidate);
