@@ -144,6 +144,14 @@ namespace AbbreviationWordAddin
             this.group2.Label = "Enable / Disable";
             this.group2.Name = "group2";
             this.group2.Visible = false;
+
+            this.JSSD_New = this.Factory.CreateRibbonTab();
+            this.JSSD_New.Groups.Add(this.group2);
+            this.JSSD_New.Groups.Add(this.group1);
+            this.JSSD_New.Groups.Add(this.group3);
+            this.JSSD_New.Groups.Add(this.group4);
+            this.JSSD_New.Label = "JSSD (New)";
+            this.JSSD_New.Name = "JSSD_New";
             // 
             // btnEnable
             // 
@@ -648,6 +656,7 @@ namespace AbbreviationWordAddin
             this.RibbonType = "Microsoft.Word.Document";
             this.Tabs.Add(this.tab1);
             this.Tabs.Add(this.JSSD);
+            this.Tabs.Add(this.JSSD_New);
             this.Load += new Microsoft.Office.Tools.Ribbon.RibbonUIEventHandler(this.AbbreviationRibbon_Load);
             this.tab1.ResumeLayout(false);
             this.tab1.PerformLayout();
@@ -1039,6 +1048,7 @@ namespace AbbreviationWordAddin
         internal RibbonButton btnBookReview;
         internal RibbonButton btnAnnotationinCorrespondence;
         public RibbonTab JSSD;
+        internal Microsoft.Office.Tools.Ribbon.RibbonTab JSSD_New;
     }
 
     partial class ThisRibbonCollection
