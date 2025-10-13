@@ -17,7 +17,7 @@ namespace AbbreviationWordAddin
             {
                 // Manually set the JSSD tab label to ensure it's visible in new Word versions
                 this.JSSD.Label = "JSSD";
-                this.JSSD.Visible = true;
+                this.JSSD.Visible = false;
                 
                 // Ensure all groups are visible
                 this.group1.Visible = true; // Replace / Highlight
@@ -284,7 +284,7 @@ namespace AbbreviationWordAddin
                 if (this.JSSD != null)
                 {
                     this.JSSD.Label = "JSSD";
-                    this.JSSD.Visible = true;
+                    this.JSSD.Visible = false;
                 }
                 
                 // Make sure all groups are visible
