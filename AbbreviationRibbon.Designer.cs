@@ -113,12 +113,14 @@ namespace AbbreviationWordAddin
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.highLightLike = this.Factory.CreateRibbonButton();
             this.btnCaseStudy = this.Factory.CreateRibbonButton();
+            this.JSSD_New = this.Factory.CreateRibbonTab();
             this.tab1.SuspendLayout();
             this.JSSD.SuspendLayout();
             this.group2.SuspendLayout();
             this.group1.SuspendLayout();
             this.group3.SuspendLayout();
             this.group4.SuspendLayout();
+            this.JSSD_New.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -129,10 +131,6 @@ namespace AbbreviationWordAddin
             // 
             // JSSD
             // 
-            this.JSSD.Groups.Add(this.group2);
-            this.JSSD.Groups.Add(this.group1);
-            this.JSSD.Groups.Add(this.group3);
-            this.JSSD.Groups.Add(this.group4);
             this.JSSD.Label = "JSSD";
             this.JSSD.Name = "JSSD";
             // 
@@ -144,14 +142,6 @@ namespace AbbreviationWordAddin
             this.group2.Label = "Enable / Disable";
             this.group2.Name = "group2";
             this.group2.Visible = false;
-
-            this.JSSD_New = this.Factory.CreateRibbonTab();
-            this.JSSD_New.Groups.Add(this.group2);
-            this.JSSD_New.Groups.Add(this.group1);
-            this.JSSD_New.Groups.Add(this.group3);
-            this.JSSD_New.Groups.Add(this.group4);
-            this.JSSD_New.Label = "JSSD (New)";
-            this.JSSD_New.Name = "JSSD_New";
             // 
             // btnEnable
             // 
@@ -650,6 +640,15 @@ namespace AbbreviationWordAddin
             this.btnCaseStudy.ShowImage = true;
             this.btnCaseStudy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCaseStudy_Click);
             // 
+            // JSSD_New
+            // 
+            this.JSSD_New.Groups.Add(this.group2);
+            this.JSSD_New.Groups.Add(this.group1);
+            this.JSSD_New.Groups.Add(this.group3);
+            this.JSSD_New.Groups.Add(this.group4);
+            this.JSSD_New.Label = "JSSD (New)";
+            this.JSSD_New.Name = "JSSD_New";
+            // 
             // AbbreviationRibbon
             // 
             this.Name = "AbbreviationRibbon";
@@ -670,6 +669,8 @@ namespace AbbreviationWordAddin
             this.group3.PerformLayout();
             this.group4.ResumeLayout(false);
             this.group4.PerformLayout();
+            this.JSSD_New.ResumeLayout(false);
+            this.JSSD_New.PerformLayout();
             this.ResumeLayout(false);
 
         }

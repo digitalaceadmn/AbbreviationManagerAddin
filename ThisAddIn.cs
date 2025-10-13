@@ -975,26 +975,43 @@ namespace AbbreviationWordAddin
             {
                 Word.Window activeWindow = this.Application.ActiveWindow;
 
-                // Rename variable to avoid conflict
-                var paneControl = EnsureTaskPaneVisible(activeWindow, "Replace ALL"); // was 'control'
+                // Ensure task pane is visible, even if closed
+                var paneControl = EnsureTaskPaneVisible(activeWindow, "Replace ALL");
 
+                // 🔹 If the pane is not found, create or reopen it
                 if (paneControl == null)
                 {
-                    if (debug)
+                    if (!taskPanes.ContainsKey(activeWindow))
                     {
-                        System.Windows.Forms.MessageBox.Show("Failed to get SuggestionPaneControl for active window!", "Error");
+                        SuggestionPaneControl = new SuggestionPaneControl();
+                        var pane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions", activeWindow);
+                        pane.Width = 500;
+                        taskPanes[activeWindow] = pane;
+                        TrackTaskPaneVisibility(pane, activeWindow);
                     }
 
-                    return;
+                    // Retrieve the control and show pane
+                    var currentPane = taskPanes[activeWindow];
+                    SuggestionPaneControl = currentPane.Control as SuggestionPaneControl;
+                    currentPane.Visible = true;
+                    paneControl = SuggestionPaneControl;
+                }
+                else
+                {
+                    // 🔹 If pane exists but is hidden, show it
+                    var pane = taskPanes.ContainsKey(activeWindow) ? taskPanes[activeWindow] : null;
+                    if (pane != null && !pane.Visible)
+                        pane.Visible = true;
                 }
 
+                // 🔹 Collect matches and show them
                 var matches = CollectAllAbbreviations();
 
                 if (!matches.Any())
                 {
                     if (debug)
                     {
-                        System.Windows.Forms.MessageBox.Show("No matches found.", "Debug");
+                        MessageBox.Show("No matches found.", "Debug");
                     }
                     return;
                 }
@@ -1003,16 +1020,21 @@ namespace AbbreviationWordAddin
                     paneControl.Invoke(new Action(() => paneControl.LoadMatches(matches)));
                 else
                     paneControl.LoadMatches(matches);
-
             }
             catch (Exception ex)
             {
                 if (debug)
                 {
-                    System.Windows.Forms.MessageBox.Show("Error in ReplaceAllAbbreviations: " + ex.Message + "\n" + ex.StackTrace, "Exception", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        "Error in ReplaceAllAbbreviations: " + ex.Message + "\n" + ex.StackTrace,
+                        "Exception",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
                 }
             }
         }
+
 
 
         private void ReplaceFirstInRange(Word.Document doc, string search, string replace)
