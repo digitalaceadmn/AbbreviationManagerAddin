@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace AbbreviationWordAddin
@@ -62,22 +64,117 @@ namespace AbbreviationWordAddin
             this.ResumeLayout(false);
         }
 
-        private void LoadHelpContent()
+        private RichTextBox GetHelpRichTextBox()
         {
-            var helpContent = this.Controls[0].Controls[0] as RichTextBox;
-            if (helpContent != null)
+            foreach (Control c in this.Controls)
             {
-                helpContent.Clear();
-                
-                // Set RTF content with formatting
-                helpContent.Rtf = CreateHelpContentRTF();
-                
-                // Ensure it's read-only
-                helpContent.ReadOnly = true;
-                helpContent.Enabled = true;
-                helpContent.TabStop = false;
+                if (c is Panel panel)
+                {
+                    foreach (Control child in panel.Controls)
+                    {
+                        if (child is RichTextBox rtb)
+                            return rtb;
+                    }
+                }
+            }
+            return null;
+        }
+
+
+        public static string ExtractTemplateToLocal(string embeddedName, string outputName)
+        {
+            string outputDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "AbbreviationWordAddin",
+                "Help"
+            );
+
+            Directory.CreateDirectory(outputDir);
+
+            string fullPath = Path.Combine(outputDir, outputName);
+
+            Assembly asm = Assembly.GetExecutingAssembly();
+
+            // IMPORTANT:
+            // You MUST include full namespace + folder
+            // e.g. "AbbreviationWordAddin.Help.Help.docx"
+            Stream stream = asm.GetManifestResourceStream(embeddedName);
+
+            if (stream == null)
+            {
+                MessageBox.Show(
+                    "Embedded help file NOT found:\n" + embeddedName +
+                    "\n\nAvailable resources:\n" +
+                    string.Join("\n", asm.GetManifestResourceNames())
+                );
+                return null;
+            }
+
+            using (stream)
+            using (FileStream fs = new FileStream(fullPath, FileMode.Create, FileAccess.Write))
+            {
+                stream.CopyTo(fs);
+            }
+
+            return fullPath;
+        }
+
+
+        private string LoadWordHelpText(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return "Help file not found.\n\nExpected: " + filePath;
+
+            try
+            {
+                var wordApp = Globals.ThisAddIn.Application;
+                var doc = wordApp.Documents.Open(filePath, ReadOnly: true, Visible: false);
+
+                string text = doc.Content.Text;
+
+                doc.Close(false);
+
+                return text;
+            }
+            catch (Exception ex)
+            {
+                return "Error loading help file:\n" + ex.Message;
             }
         }
+
+
+        private void LoadHelpContent()
+        {
+            RichTextBox helpContent = GetHelpRichTextBox();
+
+            if (helpContent == null)
+            {
+                MessageBox.Show("Error: Help RichTextBox not found.");
+                return;
+            }
+
+            // Correct embedded resource name:
+            // Example: "AbbreviationWordAddin.Help.Help.docx"
+            string embeddedName = "AbbreviationWordAddin.Help.Help.docx";
+
+            string templatePath = ExtractTemplateToLocal(embeddedName, "Help.docx");
+
+            if (templatePath == null)
+            {
+                helpContent.Text = "Help file could not be extracted.";
+                return;
+            }
+
+            string helpText = LoadWordHelpText(templatePath);
+
+            helpContent.Clear();
+            helpContent.Text = helpText ?? "Unable to load help content.";
+
+            helpContent.ReadOnly = true;
+            helpContent.TabStop = false;
+        }
+
+
 
         private string CreateHelpContentRTF()
         {

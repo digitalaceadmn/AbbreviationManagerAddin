@@ -311,9 +311,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <None Include="Abbreviation.pfx" />
+    <None Include="AbbreviationWordAddin_6_TemporaryKey.pfx" />
     <None Include="AbbreviationWordAddin_TemporaryKey.pfx" />
     <None Include="app.config" />
-    <EmbeddedResource Include="Help\Help.docx" />
+    <EmbeddedResource Include="Help\Help.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -431,10 +434,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>AbbreviationWordAddin_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>AbbreviationWordAddin_6_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>AA678F5552285DD41C0A0430FB7B82F59D42D3DC</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>FBF796B98B254A55FF242FC1C355051EAB9E87AB</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
