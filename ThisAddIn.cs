@@ -55,6 +55,8 @@ namespace AbbreviationWordAddin
         public HashSet<Word.Window> taskPaneOpenedOnce = new HashSet<Word.Window>();
         public bool suggestionFROMInput = false;
 
+        private HashSet<string> _globallyReplacedPhrases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         private void TrackTaskPaneVisibility(CustomTaskPane pane, Word.Window window)
         {
             pane.VisibleChanged += (s, e) =>
@@ -387,7 +389,7 @@ namespace AbbreviationWordAddin
                 // Create pane only once per window
                 SuggestionPaneControl = new SuggestionPaneControl();
                 var pane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions", window);
-                pane.Width = 500;
+                pane.Width = 700;
 
                 taskPanes[window] = pane;
 
@@ -422,39 +424,64 @@ namespace AbbreviationWordAddin
 
         public void ReplaceAllDirectAbbreviations_Fast()
         {
+            _globallyReplacedPhrases.Clear();
+            Word.Document doc = null;
+
             try
             {
-                var doc = this.Application.ActiveDocument;
+                doc = this.Application.ActiveDocument;
+                if (doc == null) return;
 
                 this.Application.ScreenUpdating = false;
                 this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
                 this.Application.ShowAnimation = false;
                 this.Application.DisplayStatusBar = false;
+                this.Application.Options.ReplaceSelection = false;
 
                 if (reloadAbbrDataFromDict)
                 {
                     AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
                 }
 
-                string text = doc.Content.Text;
+                // 🔹 Longest phrases first (prevents partial replacements)
+                var phrases = AbbreviationManager.GetAllPhrases()
+                                                 .Where(p => !string.IsNullOrWhiteSpace(p))
+                                                 .OrderByDescending(p => p.Length)
+                                                 .ToList();
 
-                foreach (var phrase in AbbreviationManager.GetAllPhrases())
+                foreach (var phrase in phrases)
                 {
-                    string replacement = AbbreviationManager.GetFromAutoCorrectCache(phrase)
-                                        ?? AbbreviationManager.GetAbbreviation(phrase);
+                    string replacement =
+                        AbbreviationManager.GetFromAutoCorrectCache(phrase)
+                        ?? AbbreviationManager.GetAbbreviation(phrase);
 
-                    if (!string.IsNullOrEmpty(replacement))
+                    if (string.IsNullOrWhiteSpace(replacement))
+                        continue;
+
+                    Word.Find find = doc.Content.Find;
+                    find.ClearFormatting();
+                    find.Replacement.ClearFormatting();
+
+                    find.Text = phrase;
+                    find.Replacement.Text = replacement;
+
+                    find.MatchCase = false;
+                    find.MatchWholeWord = true;     // ✅ safe whole phrase
+                    find.MatchWildcards = false;
+                    find.Wrap = Word.WdFindWrap.wdFindContinue;
+
+                    // 🚀 Single ReplaceAll per phrase (Word-native, safe)
+                    bool replaced = find.Execute(
+                        Replace: Word.WdReplace.wdReplaceAll,
+                        Forward: true
+                    );
+
+                    if (replaced)
                     {
-                        text = System.Text.RegularExpressions.Regex.Replace(
-                            text,
-                            $@"\b{System.Text.RegularExpressions.Regex.Escape(phrase)}\b",
-                            replacement,
-                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
-                        );
+                        _globallyReplacedPhrases.Add(phrase);
                     }
-                }
 
-                doc.Content.Text = text;
+                }
             }
             finally
             {
@@ -462,8 +489,10 @@ namespace AbbreviationWordAddin
                 this.Application.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
                 this.Application.ShowAnimation = true;
                 this.Application.DisplayStatusBar = true;
+                this.Application.Options.ReplaceSelection = true;
             }
         }
+
 
 
         public void ReplaceAllDirectAbbreviations()
@@ -886,6 +915,8 @@ namespace AbbreviationWordAddin
 
             foreach (var phrase in phrases)
             {
+                if (_globallyReplacedPhrases.Contains(phrase))
+                    continue;
                 string pattern = Regex.Escape(phrase);
                 var matches = Regex.Matches(fullText, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -1055,6 +1086,13 @@ namespace AbbreviationWordAddin
             find.Execute(Replace: Word.WdReplace.wdReplaceOne);
             doc.Application.ScreenUpdating = false;
         }
+
+        public void MarkPhraseAsReplaced(string phrase)
+        {
+            if (!string.IsNullOrWhiteSpace(phrase))
+                _globallyReplacedPhrases.Add(phrase);
+        }
+
 
         public void ReplaceAbbreviation(string word, string replacement, bool selectAfter = false)
         {
@@ -1264,8 +1302,12 @@ namespace AbbreviationWordAddin
                     }
 
                     var phrases = AbbreviationManager.GetAllPhrases()
-                                                     .OrderByDescending(p => p.Length)
-                                                     .ToList();
+                        .Where(p => !string.IsNullOrWhiteSpace(p))
+                        // 🚫 skip already replaced phrases
+                        .Where(p => !_globallyReplacedPhrases.Contains(p))
+                        .OrderByDescending(p => p.Length)
+                        .ToList();
+
 
                     // Build regex once
                     //string pattern = string.Join("|", phrases.Select(Regex.Escape));
@@ -1298,6 +1340,8 @@ namespace AbbreviationWordAddin
                         var matches = regex.Matches(paraText);
                         foreach (Match match in matches)
                         {
+                            if (_globallyReplacedPhrases.Contains(match.Value))
+                                continue;
                             processed++;
                             int percentage = (processed * 100) / (totalMatches == 0 ? 1 : totalMatches);
 
@@ -1424,7 +1468,10 @@ namespace AbbreviationWordAddin
                         {
                             string paraText = para.Range.Text;
                             if (!string.IsNullOrWhiteSpace(paraText))
-                                totalMatches += regex.Matches(paraText).Count;
+                                totalMatches += regex.Matches(paraText)
+                                    .Cast<Match>()
+                                    .Count(m => !_globallyReplacedPhrases.Contains(m.Value));
+
                         }
                     }, null);
 

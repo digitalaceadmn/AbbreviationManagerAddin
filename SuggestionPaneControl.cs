@@ -266,7 +266,9 @@ namespace AbbreviationWordAddin
                     replacement = match.Replacement;
 
                 // replace in Word document (real-time)
-                Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, false);
+                //Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, false);
+                Globals.ThisAddIn.MarkPhraseAsReplaced(match.Phrase);
+
 
                 // update UI: remove replaced item
                 listViewAbbrev.Items.Remove(listViewAbbrev.SelectedItems[0]);
