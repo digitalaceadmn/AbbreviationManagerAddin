@@ -959,34 +959,37 @@ namespace AbbreviationWordAddin
 
             try
             {
-                var tempDoc = Globals.ThisAddIn.Application.Documents.Open(templatePath, Visible: false);
+                var app = Globals.ThisAddIn.Application;
+                var currentDoc = app.ActiveDocument;
+
+                var range = currentDoc.Range(0, 0);
+                range.Select();
+
+                range.InsertBreak(WdBreakType.wdSectionBreakContinuous);
+
+                app.Selection.HomeKey(WdUnits.wdStory);
+
+                var tempDoc = app.Documents.Open(
+                    templatePath,
+                    ReadOnly: true,
+                    Visible: false
+                );
 
                 tempDoc.Content.Copy();
-
                 tempDoc.Close(false);
 
-                System.Threading.Thread.Sleep(200);
+                app.Selection.Paste();
 
-                var currentDoc = Globals.ThisAddIn.Application.ActiveDocument;
-                currentDoc.Activate();
+                app.Selection.TypeParagraph();
 
-                var selection = Globals.ThisAddIn.Application.Selection;
-
-                selection.HomeKey(WdUnits.wdStory);
-
-                selection.Paste();
-
-                selection.TypeParagraph();
-
-                selection.HomeKey(WdUnits.wdStory);
-
-                MessageBox.Show("Template inserted successfully at the top!");
+                MessageBox.Show("Template inserted successfully!");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error inserting template: " + ex.Message);
             }
         }
+
 
 
 

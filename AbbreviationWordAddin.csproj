@@ -279,6 +279,9 @@
     <Compile Include="HelpTaskPaneControl.Designer.cs">
       <DependentUpon>HelpTaskPaneControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="LoaderForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="ProgressForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -311,7 +314,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <None Include="Abbreviation.pfx" />
-    <None Include="AbbreviationWordAddin_6_TemporaryKey.pfx" />
     <None Include="AbbreviationWordAddin_TemporaryKey.pfx" />
     <None Include="app.config" />
     <EmbeddedResource Include="Help\Help.docx">
@@ -434,10 +436,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>AbbreviationWordAddin_6_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>AbbreviationWordAddin_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>FBF796B98B254A55FF242FC1C355051EAB9E87AB</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>F3832C7905AAA7A79C3EAA00974E359B18342FBA</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

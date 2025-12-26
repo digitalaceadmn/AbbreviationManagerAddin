@@ -84,7 +84,7 @@ namespace AbbreviationWordAddin
             this.textBoxInput.Location = new System.Drawing.Point(10, 10);
             this.textBoxInput.Margin = new System.Windows.Forms.Padding(10);
             this.textBoxInput.Name = "textBoxInput";
-            this.textBoxInput.Size = new System.Drawing.Size(130, 20);
+            this.textBoxInput.Size = new System.Drawing.Size(1197, 31);
             this.textBoxInput.TabIndex = 0;
             // 
             // tabControlModes
@@ -93,18 +93,18 @@ namespace AbbreviationWordAddin
             this.tabControlModes.Controls.Add(this.tabPageReverse);
             this.tabControlModes.Controls.Add(this.tabPageDictionary);
             this.tabControlModes.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControlModes.Location = new System.Drawing.Point(3, 43);
+            this.tabControlModes.Location = new System.Drawing.Point(3, 54);
             this.tabControlModes.Name = "tabControlModes";
             this.tabControlModes.SelectedIndex = 0;
-            this.tabControlModes.Size = new System.Drawing.Size(144, 1);
+            this.tabControlModes.Size = new System.Drawing.Size(1211, 895);
             this.tabControlModes.TabIndex = 1;
             // 
             // tabPageAbbreviation
             // 
             this.tabPageAbbreviation.Controls.Add(this.listViewAbbrev);
-            this.tabPageAbbreviation.Location = new System.Drawing.Point(4, 22);
+            this.tabPageAbbreviation.Location = new System.Drawing.Point(8, 39);
             this.tabPageAbbreviation.Name = "tabPageAbbreviation";
-            this.tabPageAbbreviation.Size = new System.Drawing.Size(136, 0);
+            this.tabPageAbbreviation.Size = new System.Drawing.Size(1195, 848);
             this.tabPageAbbreviation.TabIndex = 0;
             this.tabPageAbbreviation.Text = "Abbreviations";
             // 
@@ -115,16 +115,16 @@ namespace AbbreviationWordAddin
             this.listViewAbbrev.HideSelection = false;
             this.listViewAbbrev.Location = new System.Drawing.Point(0, 0);
             this.listViewAbbrev.Name = "listViewAbbrev";
-            this.listViewAbbrev.Size = new System.Drawing.Size(136, 0);
+            this.listViewAbbrev.Size = new System.Drawing.Size(1195, 848);
             this.listViewAbbrev.TabIndex = 0;
             this.listViewAbbrev.UseCompatibleStateImageBehavior = false;
             // 
             // tabPageReverse
             // 
             this.tabPageReverse.Controls.Add(this.listViewReverse);
-            this.tabPageReverse.Location = new System.Drawing.Point(4, 22);
+            this.tabPageReverse.Location = new System.Drawing.Point(8, 39);
             this.tabPageReverse.Name = "tabPageReverse";
-            this.tabPageReverse.Size = new System.Drawing.Size(192, 0);
+            this.tabPageReverse.Size = new System.Drawing.Size(128, 0);
             this.tabPageReverse.TabIndex = 1;
             this.tabPageReverse.Text = "Reverse Abbreviations";
             // 
@@ -135,16 +135,16 @@ namespace AbbreviationWordAddin
             this.listViewReverse.HideSelection = false;
             this.listViewReverse.Location = new System.Drawing.Point(0, 0);
             this.listViewReverse.Name = "listViewReverse";
-            this.listViewReverse.Size = new System.Drawing.Size(192, 0);
+            this.listViewReverse.Size = new System.Drawing.Size(128, 0);
             this.listViewReverse.TabIndex = 0;
             this.listViewReverse.UseCompatibleStateImageBehavior = false;
             // 
             // tabPageDictionary
             // 
             this.tabPageDictionary.Controls.Add(this.listViewDictionary);
-            this.tabPageDictionary.Location = new System.Drawing.Point(4, 22);
+            this.tabPageDictionary.Location = new System.Drawing.Point(8, 39);
             this.tabPageDictionary.Name = "tabPageDictionary";
-            this.tabPageDictionary.Size = new System.Drawing.Size(192, 0);
+            this.tabPageDictionary.Size = new System.Drawing.Size(128, 0);
             this.tabPageDictionary.TabIndex = 2;
             this.tabPageDictionary.Text = "Dictionary";
             // 
@@ -155,7 +155,7 @@ namespace AbbreviationWordAddin
             this.listViewDictionary.HideSelection = false;
             this.listViewDictionary.Location = new System.Drawing.Point(0, 0);
             this.listViewDictionary.Name = "listViewDictionary";
-            this.listViewDictionary.Size = new System.Drawing.Size(192, 0);
+            this.listViewDictionary.Size = new System.Drawing.Size(128, 0);
             this.listViewDictionary.TabIndex = 0;
             this.listViewDictionary.UseCompatibleStateImageBehavior = false;
             // 
@@ -163,7 +163,7 @@ namespace AbbreviationWordAddin
             // 
             this.lblWord.Location = new System.Drawing.Point(10, 10);
             this.lblWord.Name = "lblWord";
-            this.lblWord.Size = new System.Drawing.Size(100, 23);
+            this.lblWord.Size = new System.Drawing.Size(400, 23);
             this.lblWord.TabIndex = 0;
             this.lblWord.Text = "Word / Phrase";
             // 
@@ -179,15 +179,16 @@ namespace AbbreviationWordAddin
             // 
             this.txtWord.Location = new System.Drawing.Point(120, 8);
             this.txtWord.Name = "txtWord";
-            this.txtWord.Size = new System.Drawing.Size(240, 20);
+            this.txtWord.Size = new System.Drawing.Size(240, 31);
             this.txtWord.TabIndex = 1;
             // 
             // txtReplacement
             // 
             this.txtReplacement.Location = new System.Drawing.Point(120, 38);
             this.txtReplacement.Name = "txtReplacement";
-            this.txtReplacement.Size = new System.Drawing.Size(240, 20);
+            this.txtReplacement.Size = new System.Drawing.Size(240, 31);
             this.txtReplacement.TabIndex = 3;
+            //this.txtReplacement.TextChanged += new System.EventHandler(this.txtReplacement_TextChanged);
             // 
             // btnReplace
             // 
@@ -239,6 +240,7 @@ namespace AbbreviationWordAddin
             // 
             // contextMenuStrip1
             // 
+            this.contextMenuStrip1.ImageScalingSize = new System.Drawing.Size(32, 32);
             this.contextMenuStrip1.Name = "contextMenuStrip1";
             this.contextMenuStrip1.Size = new System.Drawing.Size(61, 4);
             // 
@@ -256,7 +258,7 @@ namespace AbbreviationWordAddin
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.mainLayout.Size = new System.Drawing.Size(150, 150);
+            this.mainLayout.Size = new System.Drawing.Size(1217, 1078);
             this.mainLayout.TabIndex = 1;
             // 
             // bottomPanel
@@ -267,10 +269,10 @@ namespace AbbreviationWordAddin
             this.bottomPanel.Controls.Add(this.txtReplacement);
             this.bottomPanel.Controls.Add(this.buttonPanel);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bottomPanel.Location = new System.Drawing.Point(3, 27);
+            this.bottomPanel.Location = new System.Drawing.Point(3, 955);
             this.bottomPanel.Name = "bottomPanel";
             this.bottomPanel.Padding = new System.Windows.Forms.Padding(10);
-            this.bottomPanel.Size = new System.Drawing.Size(144, 120);
+            this.bottomPanel.Size = new System.Drawing.Size(1211, 120);
             this.bottomPanel.TabIndex = 2;
             // 
             // buttonPanel
@@ -278,7 +280,7 @@ namespace AbbreviationWordAddin
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.buttonPanel.Location = new System.Drawing.Point(10, 70);
             this.buttonPanel.Name = "buttonPanel";
-            this.buttonPanel.Size = new System.Drawing.Size(124, 40);
+            this.buttonPanel.Size = new System.Drawing.Size(1191, 40);
             this.buttonPanel.TabIndex = 4;
             this.buttonPanel.WrapContents = false;
             // 
@@ -286,6 +288,7 @@ namespace AbbreviationWordAddin
             // 
             this.Controls.Add(this.mainLayout);
             this.Name = "SuggestionPaneControl";
+            this.Size = new System.Drawing.Size(1217, 1078);
             this.tabControlModes.ResumeLayout(false);
             this.tabPageAbbreviation.ResumeLayout(false);
             this.tabPageReverse.ResumeLayout(false);

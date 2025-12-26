@@ -33,7 +33,7 @@ namespace AbbreviationWordAddin
             };
             this.listViewAbbrev.View = System.Windows.Forms.View.Details;
             this.listViewAbbrev.FullRowSelect = true;
-            this.listViewAbbrev.Columns.Add("Word/Phrase", 120);
+            this.listViewAbbrev.Columns.Add("Word/Phrase", 420);
             this.listViewAbbrev.Columns.Add("Replacement", 200);
             this.listViewAbbrev.DoubleClick += ListView_DoubleClick;
             this.listViewAbbrev.MouseEnter += (s, e) => isSuggestionListFrozen = true;
@@ -256,45 +256,58 @@ namespace AbbreviationWordAddin
 
         private void btnReplace_Click(object sender, EventArgs e)
         {
-            if (listViewAbbrev.SelectedItems.Count > 0)
+            if (listViewAbbrev.SelectedItems.Count == 0)
+                return;
+
+            var match = (MatchResult)listViewAbbrev.SelectedItems[0].Tag;
+
+            string replacement = txtReplacement.Text.Trim();
+            if (string.IsNullOrEmpty(replacement))
+                replacement = match.Replacement;
+
+            // ✅ Replace ALL occurrences in document
+            Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, true);
+
+            // ✅ Remove ALL matching items from UI
+            for (int i = listViewAbbrev.Items.Count - 1; i >= 0; i--)
             {
-                var match = (MatchResult)listViewAbbrev.SelectedItems[0].Tag;
-
-                // take latest replacement from textbox (if user edits)
-                string replacement = txtReplacement.Text.Trim();
-                if (string.IsNullOrEmpty(replacement))
-                    replacement = match.Replacement;
-
-                // replace in Word document (real-time)
-                //Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, false);
-                Globals.ThisAddIn.MarkPhraseAsReplaced(match.Phrase);
-
-
-                // update UI: remove replaced item
-                listViewAbbrev.Items.Remove(listViewAbbrev.SelectedItems[0]);
-
-                // move to next item automatically
-                if (listViewAbbrev.Items.Count > 0)
+                var itemMatch = (MatchResult)listViewAbbrev.Items[i].Tag;
+                if (string.Equals(itemMatch.Phrase, match.Phrase, StringComparison.OrdinalIgnoreCase))
                 {
-                    listViewAbbrev.Items[0].Selected = true;
-                    UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
+                    listViewAbbrev.Items.RemoveAt(i);
                 }
-                else
-                {
-                    txtWord.Text = "";
-                    txtReplacement.Text = "";
-                }
+            }
+
+            // Move selection
+            if (listViewAbbrev.Items.Count > 0)
+            {
+                listViewAbbrev.Items[0].Selected = true;
+                UpdateTextBoxes((MatchResult)listViewAbbrev.Items[0].Tag);
+            }
+            else
+            {
+                txtWord.Clear();
+                txtReplacement.Clear();
             }
         }
 
-        private void btnReplaceAll_Click(object sender, EventArgs e)
-        {
-            string word = txtWord.Text.Trim();
-            string replacement = txtReplacement.Text.Trim();
 
-            if (!string.IsNullOrEmpty(word) && !string.IsNullOrEmpty(replacement))
-                Globals.ThisAddIn.ReplaceAllDirectAbbreviations_Fast();
+        private async void btnReplaceAll_Click(object sender, EventArgs e)
+        {
+            using (var loader = new LoaderForm())
+            {
+                loader.Show();
+                loader.Refresh();
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    Globals.ThisAddIn.ReplaceAllDirectAbbreviations_Fast();
+                });
+
+                loader.Close();
+            }
         }
+
 
 
         private void btnIgnore_Click(object sender, EventArgs e)
@@ -346,5 +359,7 @@ namespace AbbreviationWordAddin
         {
             Globals.ThisAddIn.SuggestionPaneControl_OnTextChanged(textBoxInput.Text);
         }
+
+       
     }
 }
