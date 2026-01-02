@@ -139,7 +139,7 @@ namespace AbbreviationWordAddin
             }
             finally
             {
-                button.Label = "Replace All";  
+                button.Label = "List All";  
                 button.Enabled = true;  
             }
         }

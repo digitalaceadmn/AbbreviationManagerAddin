@@ -37,6 +37,9 @@ namespace AbbreviationWordAddin
         private System.Windows.Forms.Timer debounceTimer;
         private const int DebounceDelayMs = 300;
         private string lastUndoneWord = null;
+        private int lastDocumentCharCount = -1;
+        private bool isTypingDetected = false;
+
 
         private Trie trie = new Trie();
 
@@ -56,6 +59,20 @@ namespace AbbreviationWordAddin
         public bool suggestionFROMInput = false;
 
         private HashSet<string> _globallyReplacedPhrases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        internal class Win32WindowWrapper : IWin32Window
+        {
+            private readonly IntPtr _handle;
+
+            public Win32WindowWrapper(IntPtr handle)
+            {
+                _handle = handle;
+            }
+
+            public IntPtr Handle => _handle;
+        }
+
+
 
         private void TrackTaskPaneVisibility(CustomTaskPane pane, Word.Window window)
         {
@@ -347,7 +364,7 @@ namespace AbbreviationWordAddin
         }
 
 
-        
+
 
         //public void ToggleAbbreviationReplacement(bool enable)
         //{
@@ -377,6 +394,46 @@ namespace AbbreviationWordAddin
         //    }
 
         //}
+
+        public bool HasAbbreviationsInDocument()
+        {
+            try
+            {
+                Word.Application app = this.Application;
+                Word.Document doc = app?.ActiveDocument;
+                if (doc == null)
+                    return false;
+
+                // Read document text ONCE
+                string fullText = doc.Content.Text;
+                if (string.IsNullOrWhiteSpace(fullText))
+                    return false;
+
+                // Get all abbreviation phrases
+                var phrases = AbbreviationManager.GetAllPhrases()
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .ToList();
+
+                if (phrases.Count == 0)
+                    return false;
+
+                // Build regex pattern (escaped)
+                string pattern = string.Join("|", phrases.Select(Regex.Escape));
+
+                // Fast existence check (no allocations like Matches)
+                return Regex.IsMatch(
+                    fullText,
+                    pattern,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+                );
+            }
+            catch
+            {
+                // Never allow a pre-check to crash Word
+                return false;
+            }
+        }
+
 
         public void ToggleAbbreviationReplacement(bool enable)
         {
@@ -493,92 +550,235 @@ namespace AbbreviationWordAddin
         //    }
         //}
 
+        public bool HasAnyAbbreviations()
+        {
+            Word.Document doc = this.Application.ActiveDocument;
+            if (doc == null) return false;
+
+            string text = doc.Content.Text;
+            if (string.IsNullOrWhiteSpace(text)) return false;
+
+            var phrases = AbbreviationManager.GetAllPhrases()
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .OrderByDescending(p => p.Length)
+                .Select(Regex.Escape);
+
+            if (!phrases.Any()) return false;
+
+            string pattern = string.Join("|", phrases);
+
+            return Regex.IsMatch(
+                text,
+                pattern,
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+            );
+        }
+
+
+        //public void ReplaceAllDirectAbbreviations_Fast()
+        //{
+        //    ReplaceAllAbbreviations();
+        //    Word.Application app = this.Application;
+        //    Word.Document doc = app.ActiveDocument;
+        //    if (doc == null) return;
+
+        //    Word.Range originalSelection = null;
+
+        //    try
+        //    {
+        //        if (reloadAbbrDataFromDict)
+        //            AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
+
+        //        Word.Range contentRange = doc.Content;
+        //        string originalText = contentRange.Text;
+
+        //        var map = AbbreviationManager.GetAllPhrases()
+        //            .Where(p => !string.IsNullOrWhiteSpace(p))
+        //            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+        //            .ToDictionary(
+        //                p => p,
+        //                p => AbbreviationManager.GetFromAutoCorrectCache(p)
+        //                     ?? AbbreviationManager.GetAbbreviation(p),
+        //                StringComparer.InvariantCultureIgnoreCase
+        //            );
+
+        //        if (map.Count == 0)
+        //        {
+        //            WordDialogHelper.ShowInfo("No abbreviations are configured.");
+        //            return;
+        //        }
+
+        //        string pattern = string.Join("|",
+        //            map.Keys
+        //               .OrderByDescending(k => k.Length)
+        //               .Select(Regex.Escape)
+        //        );
+
+        //        var regex = new Regex(
+        //            pattern,
+        //            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+        //        );
+
+        //        string replacedText = regex.Replace(originalText, m =>
+        //        {
+        //            string key = m.Value;
+        //            return map.TryGetValue(key, out var repl)
+        //                ? repl
+        //                : key;
+        //        });
+
+        //        if (replacedText == originalText)
+        //        {
+        //            WordDialogHelper.ShowInfo(
+        //                "No abbreviations were found in the document."
+        //            );
+        //            return;
+        //        }
+
+        //        app.ScreenUpdating = false;
+        //        app.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
+        //        app.ShowAnimation = false;
+
+        //        originalSelection = app.Selection.Range.Duplicate;
+        //        app.UndoRecord.StartCustomRecord("Replace All Abbreviations");
+
+        //        contentRange.Text = replacedText;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(
+        //            "An error occurred while replacing abbreviations.\n\n" + ex.Message,
+        //            "Abbreviation Tool",
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Error
+        //        );
+        //    }
+        //    finally
+        //    {
+        //        try { app.UndoRecord.EndCustomRecord(); } catch { }
+
+        //        originalSelection?.Select();
+        //        app.ScreenUpdating = true;
+        //        app.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
+        //        app.ShowAnimation = true;
+        //    }
+        //}
+
+        private void ReplaceInRange(
+    Word.Range sourceRange,
+    Regex regex,
+    Dictionary<string, string> map)
+        {
+            Word.Range range = sourceRange.Duplicate;
+
+            if (range.Text.EndsWith("\a"))
+            {
+                range.End -= 1;
+            }
+
+            string text = range.Text;
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            MatchCollection matches = regex.Matches(text);
+            if (matches.Count == 0)
+                return;
+
+            for (int i = matches.Count - 1; i >= 0; i--)
+            {
+                Match m = matches[i];
+
+                if (!map.TryGetValue(m.Value, out string repl))
+                    continue;
+
+                int start = range.Start + m.Index;
+                int end = start + m.Length;
+
+                if (end > range.End)
+                    continue;
+
+                Word.Range r = range.Document.Range(start, end);
+                r.Text = repl;
+            }
+        }
+
+
+
         public void ReplaceAllDirectAbbreviations_Fast()
         {
-            _globallyReplacedPhrases.Clear();
-
             Word.Application app = this.Application;
             Word.Document doc = app.ActiveDocument;
             if (doc == null) return;
 
-            Word.Range originalSelection = null;
+            if (reloadAbbrDataFromDict)
+                AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
+
+            var map = AbbreviationManager.GetAllPhrases()
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .ToDictionary(
+                    p => p,
+                    p => AbbreviationManager.GetFromAutoCorrectCache(p)
+                         ?? AbbreviationManager.GetAbbreviation(p),
+                    StringComparer.InvariantCultureIgnoreCase
+                );
+
+            if (map.Count == 0)
+            {
+                WordDialogHelper.ShowInfo("No abbreviations are configured.");
+                return;
+            }
+
+            string pattern = string.Join("|",
+                map.Keys
+                    .OrderByDescending(k => k.Length)
+                    .Select(Regex.Escape)
+            );
+
+            Regex regex = new Regex(
+                pattern,
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+            );
+
+            app.ScreenUpdating = false;
+            app.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
+            app.ShowAnimation = false;
+            app.UndoRecord.StartCustomRecord("Replace All Abbreviations");
 
             try
             {
-                // Lock UI
-                app.ScreenUpdating = false;
-                app.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
-                app.ShowAnimation = false;
-                app.DisplayStatusBar = false;
+                // 1️⃣ Main document text
+                ReplaceInRange(doc.Content, regex, map);
 
-                app.UndoRecord.StartCustomRecord("Replace All Abbreviations");
-
-                originalSelection = app.Selection.Range.Duplicate;
-
-                if (reloadAbbrDataFromDict)
-                    AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
-
-                // 🔑 Get document text ONCE
-                string fullText = doc.Content.Text;
-
-                // Build dictionary
-                var map = AbbreviationManager.GetAllPhrases()
-                    .Where(p => !string.IsNullOrWhiteSpace(p))
-                    .OrderByDescending(p => p.Length)
-                    .Select(p => new
-                    {
-                        Phrase = p,
-                        Replacement =
-                            AbbreviationManager.GetFromAutoCorrectCache(p)
-                            ?? AbbreviationManager.GetAbbreviation(p)
-                    })
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Replacement))
-                    .ToList();
-
-                // Build single regex pattern
-                string pattern = string.Join("|", map.Select(x => Regex.Escape(x.Phrase)));
-
-                var matches = Regex.Matches(
-                    fullText,
-                    pattern,
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                );
-
-                // Replace from END → START
-                for (int i = matches.Count - 1; i >= 0; i--)
+                // 2️⃣ Tables (fully safe now)
+                foreach (Word.Table table in doc.Tables)
                 {
-                    Match m = matches[i];
-                    string matchedText = m.Value;
-
-                    var entry = map.First(x =>
-                        string.Equals(x.Phrase, matchedText, StringComparison.OrdinalIgnoreCase));
-
-                    Word.Range r = doc.Range(m.Index, m.Index + m.Length);
-                    r.Text = entry.Replacement;
-
-                    _globallyReplacedPhrases.Add(entry.Phrase);
+                    foreach (Word.Row row in table.Rows)
+                    {
+                        foreach (Word.Cell cell in row.Cells)
+                        {
+                            ReplaceInRange(cell.Range, regex, map);
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "An error occurred while replacing abbreviations.\n\n" + ex.Message,
-                    "Abbreviation Tool",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
             }
             finally
             {
-                originalSelection?.Select();
-                app.UndoRecord.EndCustomRecord();
+                try { app.UndoRecord.EndCustomRecord(); } catch { }
 
                 app.ScreenUpdating = true;
                 app.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
                 app.ShowAnimation = true;
-                app.DisplayStatusBar = true;
             }
         }
+
+
+
+
+
+
+
 
 
 
@@ -1152,12 +1352,10 @@ namespace AbbreviationWordAddin
 
                 if (matches == null || matches.Count == 0)
                 {
-                    MessageBox.Show(
-                        "No words found in the document for which abbreviations are applicable.",
-                        "Abbreviation Tool",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information
-                    );
+                    WordDialogHelper.ShowInfo(
+                         "No words found in the document for which abbreviations are applicable."
+                     );
+
 
                     paneControl?.Invoke(new Action(() =>
                     {
@@ -1391,108 +1589,108 @@ namespace AbbreviationWordAddin
 
         public void HighlightAllAbbreviations()
         {
+
             if (!isAbbreviationEnabled) return;
+
+
+            Word.Document doc = this.Application.ActiveDocument;
+
+            if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
+            {
+                AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
+            }
+
+            var phrases = AbbreviationManager.GetAllPhrases()
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Where(p => !_globallyReplacedPhrases.Contains(p))
+                .OrderByDescending(p => p.Length)
+                .ToList();
+
+            if (phrases.Count == 0)
+            {
+                WordDialogHelper.ShowInfo(
+                        "No words found in the document for which abbreviations are applicable."
+                    );
+                return;
+            }
+
+            string pattern = @"(?<!\w)(" + string.Join("|", phrases.Select(Regex.Escape)) + @")(?!\w)";
+            Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+            int totalMatches = 0;
+
+            foreach (Word.Paragraph para in doc.Paragraphs)
+            {
+                string text = para.Range.Text;
+                if (!string.IsNullOrWhiteSpace(text))
+                    totalMatches += regex.Matches(text).Count;
+
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(para);
+            }
+
+            if (totalMatches == 0)
+            {
+                WordDialogHelper.ShowInfo(
+                        "No words found in the document for which abbreviations are applicable."
+                    );
+                return;
+            }
+
 
             var progressForm = new ProgressForm();
             var syncContext = System.Threading.SynchronizationContext.Current;
+
             Exception processError = null;
-            var debugLog = new System.Text.StringBuilder();
 
             var highlightThread = new System.Threading.Thread(() =>
             {
                 try
                 {
-                    Word.Document doc = null;
                     syncContext.Send(_ =>
                     {
-                        doc = this.Application.ActiveDocument;
                         this.Application.ScreenUpdating = false;
                         this.Application.DisplayStatusBar = false;
                         this.Application.Options.ReplaceSelection = false;
                     }, null);
 
-                    if (!AbbreviationManager.IsAutoCorrectCacheInitialized())
-                    {
-                        syncContext.Send(_ =>
-                        {
-                            AbbreviationManager.InitializeAutoCorrectCache(this.Application.AutoCorrect);
-                        }, null);
-                    }
-
-                    var phrases = AbbreviationManager.GetAllPhrases()
-                        .Where(p => !string.IsNullOrWhiteSpace(p))
-                        // 🚫 skip already replaced phrases
-                        .Where(p => !_globallyReplacedPhrases.Contains(p))
-                        .OrderByDescending(p => p.Length)
-                        .ToList();
-
-
-                    // Build regex once
-                    //string pattern = string.Join("|", phrases.Select(Regex.Escape));
-                    //Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-                    string pattern = @"(?<!\w)(" + string.Join("|", phrases.Select(Regex.Escape)) + @")(?!\w)";
-                    Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-                    // Count total matches for progress bar
-                    int totalMatches = 0;
-                    syncContext.Send(_ =>
-                    {
-                        foreach (Word.Paragraph para in doc.Paragraphs)
-                        {
-                            string paraText = para.Range.Text;
-                            if (!string.IsNullOrWhiteSpace(paraText))
-                                totalMatches += regex.Matches(paraText).Count;
-                        }
-                    }, null);
-
-                    debugLog.AppendLine($"Total matches found: {totalMatches}");
                     int processed = 0;
 
-                    // Highlight paragraph by paragraph
                     foreach (Word.Paragraph para in doc.Paragraphs)
                     {
                         string paraText = para.Range.Text;
                         if (string.IsNullOrWhiteSpace(paraText)) continue;
 
                         var matches = regex.Matches(paraText);
+
                         foreach (Match match in matches)
                         {
                             if (_globallyReplacedPhrases.Contains(match.Value))
                                 continue;
+
                             processed++;
-                            int percentage = (processed * 100) / (totalMatches == 0 ? 1 : totalMatches);
+                            int percentage = (processed * 100) / totalMatches;
 
                             syncContext.Send(_ =>
                             {
-                                try
-                                {
-                                    int start = para.Range.Start + match.Index;
-                                    int end = start + match.Length;
+                                int start = para.Range.Start + match.Index;
+                                int end = start + match.Length;
 
-                                    if (end > para.Range.End)
-                                        end = para.Range.End;
+                                if (end > para.Range.End)
+                                    end = para.Range.End;
 
-                                    Word.Range range = doc.Range(start, end);
-                                    range.Font.Color = Word.WdColor.wdColorRed;
-                                    System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
-                                }
-                                catch (Exception ex)
-                                {
-                                    debugLog.AppendLine($"Error highlighting '{match.Value}': {ex.Message}");
-                                }
+                                Word.Range range = doc.Range(start, end);
+                                range.Font.Color = Word.WdColor.wdColorRed;
+                                System.Runtime.InteropServices.Marshal.ReleaseComObject(range);
 
-                                progressForm.UpdateProgress(percentage, $"Highlighting {processed} of {totalMatches}...");
+                                progressForm.UpdateProgress(
+                                    percentage,
+                                    $"Highlighting {processed} of {totalMatches}..."
+                                );
                             }, null);
                         }
 
                         System.Runtime.InteropServices.Marshal.ReleaseComObject(para);
                     }
-                }
-                catch (Exception ex)
-                {
-                    processError = ex;
-                    debugLog.AppendLine("❌ Exception: " + ex.ToString());
                 }
                 finally
                 {
@@ -1501,11 +1699,6 @@ namespace AbbreviationWordAddin
                         this.Application.ScreenUpdating = true;
                         this.Application.DisplayStatusBar = true;
                         this.Application.Options.ReplaceSelection = true;
-                        this.Application.Visible = true;
-
-                        //// Show debug log in a new document
-                        //Word.Document debugDoc = this.Application.Documents.Add();
-                        //debugDoc.Content.Text = debugLog.ToString();
                     }, null);
 
                     syncContext.Post(_ => progressForm.Close(), null);
@@ -1515,6 +1708,7 @@ namespace AbbreviationWordAddin
             highlightThread.Start();
             progressForm.ShowDialog();
         }
+
 
 
         public void HighlightLike()
@@ -2048,10 +2242,36 @@ namespace AbbreviationWordAddin
         {
             if (isReplacing) return;
 
-            // Reset debounce timer — this restarts the wait each keystroke
-            debounceTimer.Stop();
-            debounceTimer.Start();
+            try
+            {
+                if (this.Application.Documents.Count == 0) return;
+
+                var sel = this.Application.Selection;
+                if (sel?.Range == null) return;
+
+                int currentCharCount = sel.Document.Content.Characters.Count;
+
+                if (lastDocumentCharCount != -1 &&
+                    currentCharCount != lastDocumentCharCount)
+                {
+                    isTypingDetected = true;
+
+                    debounceTimer.Stop();
+                    debounceTimer.Start();
+                }
+                else
+                {
+                    isTypingDetected = false;
+                }
+
+                lastDocumentCharCount = currentCharCount;
+            }
+            catch
+            {
+                // Never let timer crash Word
+            }
         }
+
 
 
 
@@ -2059,6 +2279,12 @@ namespace AbbreviationWordAddin
         private void DebounceTimer_Tick(object sender, EventArgs e)
         {
             debounceTimer.Stop();
+
+            // 🔒 Only proceed if actual typing occurred
+            if (!isTypingDetected)
+                return;
+
+            isTypingDetected = false;
 
             if (this.Application.Documents.Count == 0 || !isAbbreviationEnabled)
                 return;

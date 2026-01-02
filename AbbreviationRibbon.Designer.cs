@@ -178,7 +178,7 @@ namespace AbbreviationWordAddin
             // 
             this.btnReplaceAll.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.btnReplaceAll.Image = ((System.Drawing.Image)(resources.GetObject("btnReplaceAll.Image")));
-            this.btnReplaceAll.Label = "Replace All";
+            this.btnReplaceAll.Label = "List All";
             this.btnReplaceAll.Name = "btnReplaceAll";
             this.btnReplaceAll.ShowImage = true;
             this.btnReplaceAll.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnReplaceAll_Click);
@@ -947,48 +947,200 @@ namespace AbbreviationWordAddin
             return fullPath;
         }
 
+        private bool HasHeaderFooterContent(Word.HeaderFooter hf)
+        {
+            if (hf == null) return false;
+            return hf.Exists && hf.Range.Text.Trim('\r', '\a', ' ').Length > 0;
+        }
+
+        private void SyncHeaderFooter(
+            Word.HeaderFooter templateHF,
+            Word.HeaderFooter targetHF)
+        {
+            // VERY IMPORTANT: stop inheritance
+            targetHF.LinkToPrevious = false;
+
+            if (HasHeaderFooterContent(templateHF))
+            {
+                targetHF.Range.FormattedText = templateHF.Range.FormattedText;
+            }
+            else
+            {
+                // Ensure header/footer is EMPTY
+                targetHF.Range.Text = string.Empty;
+            }
+        }
+
+
+        private void CopyHeadersAndFooters(
+            Word.Section templateSection,
+            Word.Section targetSection)
+                {
+                    foreach (Word.WdHeaderFooterIndex index in Enum.GetValues(typeof(Word.WdHeaderFooterIndex)))
+                    {
+                        SyncHeaderFooter(
+                            templateSection.Headers[index],
+                            targetSection.Headers[index]
+                        );
+
+                        SyncHeaderFooter(
+                            templateSection.Footers[index],
+                            targetSection.Footers[index]
+                        );
+                    }
+                }
+
+
+
+
+
+        //private void InsertTemplate(string templatePath)
+        //{
+        //    if (!File.Exists(templatePath))
+        //    {
+        //        MessageBox.Show("Template not found: " + templatePath);
+        //        return;
+        //    }
+
+        //    try
+        //    {
+        //        var app = Globals.ThisAddIn.Application;
+        //        var selection = app.Selection;
+
+        //        if (selection == null)
+        //        {
+        //            MessageBox.Show("No active cursor position found.");
+        //            return;
+        //        }
+
+        //        selection.Range.InsertBreak(
+        //            Microsoft.Office.Interop.Word.WdBreakType.wdSectionBreakContinuous
+        //        );
+
+        //        var tempDoc = app.Documents.Open(
+        //            templatePath,
+        //            ReadOnly: true,
+        //            Visible: false
+        //        );
+
+        //        tempDoc.Content.Copy();
+        //        tempDoc.Close(false);
+
+        //        selection.Paste();
+
+        //        selection.Collapse(
+        //            Microsoft.Office.Interop.Word.WdCollapseDirection.wdCollapseEnd
+        //        );
+        //        selection.TypeParagraph();
+
+        //        MessageBox.Show("Template inserted successfully!");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Error inserting template: " + ex.Message);
+        //    }
+        //}
 
 
         private void InsertTemplate(string templatePath)
         {
             if (!File.Exists(templatePath))
             {
-                MessageBox.Show("Template not found: " + templatePath);
+                WordDialogHelper.ShowInfo("Template not found:\n" + templatePath);
                 return;
             }
 
+            Word.Application app = Globals.ThisAddIn.Application;
+            Word.Document doc = app.ActiveDocument;
+
+            if (doc == null)
+                return;
+
+            Word.Range originalSelection = null;
+            Word.Document templateDoc = null;
+
             try
             {
-                var app = Globals.ThisAddIn.Application;
-                var currentDoc = app.ActiveDocument;
+                originalSelection = app.Selection.Range.Duplicate;
 
-                var range = currentDoc.Range(0, 0);
-                range.Select();
+                app.ScreenUpdating = false;
 
-                range.InsertBreak(WdBreakType.wdSectionBreakContinuous);
+                Word.Range topRange = doc.Range(0, 0);
+                topRange.Select();
 
-                app.Selection.HomeKey(WdUnits.wdStory);
+                topRange.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
 
-                var tempDoc = app.Documents.Open(
+                Word.Section firstTargetSection = doc.Sections[1];
+
+                templateDoc = app.Documents.Open(
                     templatePath,
                     ReadOnly: true,
                     Visible: false
                 );
 
-                tempDoc.Content.Copy();
-                tempDoc.Close(false);
+                bool isFirstTemplateSection = true;
 
-                app.Selection.Paste();
+                foreach (Word.Section templateSection in templateDoc.Sections)
+                {
+                    Word.Section targetSection;
 
-                app.Selection.TypeParagraph();
+                    if (isFirstTemplateSection)
+                    {
+                        targetSection = firstTargetSection;
+                        isFirstTemplateSection = false;
+                    }
+                    else
+                    {
+                        Word.Range endRange = doc.Range(
+                            doc.Content.End - 1,
+                            doc.Content.End - 1
+                        );
+                        endRange.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
+                        targetSection = doc.Sections[doc.Sections.Count];
+                    }
 
-                MessageBox.Show("Template inserted successfully!");
+                    targetSection.PageSetup.PageWidth = templateSection.PageSetup.PageWidth;
+                    targetSection.PageSetup.PageHeight = templateSection.PageSetup.PageHeight;
+                    targetSection.PageSetup.Orientation = templateSection.PageSetup.Orientation;
+                    targetSection.PageSetup.TopMargin = templateSection.PageSetup.TopMargin;
+                    targetSection.PageSetup.BottomMargin = templateSection.PageSetup.BottomMargin;
+                    targetSection.PageSetup.LeftMargin = templateSection.PageSetup.LeftMargin;
+                    targetSection.PageSetup.RightMargin = templateSection.PageSetup.RightMargin;
+
+                    CopyHeadersAndFooters(templateSection, targetSection);
+
+                    Word.Range templateContent = templateSection.Range.Duplicate;
+                    templateContent.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                    templateContent.MoveEnd(Word.WdUnits.wdSection, 1);
+                    templateContent.Copy();
+
+                    Word.Range pasteRange = targetSection.Range;
+                    pasteRange.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                    pasteRange.Paste();
+                }
+
+                Word.Range finalTop = doc.Range(0, 0);
+                finalTop.Select();
+                app.ActiveWindow.ScrollIntoView(finalTop, true);
+
+                WordDialogHelper.ShowInfo("Template inserted at top of document.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error inserting template: " + ex.Message);
+                WordDialogHelper.ShowInfo("Error inserting template:\n" + ex.Message);
+            }
+            finally
+            {
+                templateDoc?.Close(false);
+                originalSelection?.Select();
+                app.ScreenUpdating = true;
             }
         }
+
+
+
+
+
 
 
 

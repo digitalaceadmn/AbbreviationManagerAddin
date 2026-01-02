@@ -294,6 +294,15 @@ namespace AbbreviationWordAddin
 
         private async void btnReplaceAll_Click(object sender, EventArgs e)
         {
+            clearAll();
+            if (!Globals.ThisAddIn.HasAnyAbbreviations())
+            {
+                WordDialogHelper.ShowInfo(
+                    "No abbreviations were found in the document."
+                );
+                return;
+            }
+
             using (var loader = new LoaderForm())
             {
                 loader.Show();
@@ -307,6 +316,12 @@ namespace AbbreviationWordAddin
                 loader.Close();
             }
         }
+
+
+
+
+
+
 
 
 
@@ -350,6 +365,13 @@ namespace AbbreviationWordAddin
         private void btnClose_Click(object sender, EventArgs e)
         {
             // clear all matches and close the form
+            listViewAbbrev.Items.Clear();
+            txtWord.Text = "";
+            txtReplacement.Text = "";
+        }
+
+        public void clearAll()
+        {
             listViewAbbrev.Items.Clear();
             txtWord.Text = "";
             txtReplacement.Text = "";

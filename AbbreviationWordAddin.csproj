@@ -36,7 +36,7 @@
     <PublishUrl>D:\add-in\</PublishUrl>
     <InstallUrl />
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.98</ApplicationVersion>
+    <ApplicationVersion>1.0.0.99</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -295,6 +295,8 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="WordDialogHelper.cs" />
+    <Compile Include="WordWindowHelper.cs" />
     <EmbeddedResource Include="AbbreviationRibbon.resx">
       <DependentUpon>AbbreviationRibbon.cs</DependentUpon>
     </EmbeddedResource>
