@@ -972,23 +972,33 @@ namespace AbbreviationWordAddin
         }
 
 
-        private void CopyHeadersAndFooters(
-            Word.Section templateSection,
-            Word.Section targetSection)
+        private void CopyHeadersAndFooters(Word.Section source, Word.Section target)
+        {
+            foreach (Word.WdHeaderFooterIndex index in Enum.GetValues(typeof(Word.WdHeaderFooterIndex)))
+            {
+                try
                 {
-                    foreach (Word.WdHeaderFooterIndex index in Enum.GetValues(typeof(Word.WdHeaderFooterIndex)))
+                    // Headers
+                    if (source.Headers[index].Exists)
                     {
-                        SyncHeaderFooter(
-                            templateSection.Headers[index],
-                            targetSection.Headers[index]
-                        );
+                        target.Headers[index].Range.FormattedText =
+                            source.Headers[index].Range.FormattedText;
+                    }
 
-                        SyncHeaderFooter(
-                            templateSection.Footers[index],
-                            targetSection.Footers[index]
-                        );
+                    // Footers
+                    if (source.Footers[index].Exists)
+                    {
+                        target.Footers[index].Range.FormattedText =
+                            source.Footers[index].Range.FormattedText;
                     }
                 }
+                catch
+                {
+                    // Some header/footer types may not exist (safe to ignore)
+                }
+            }
+        }
+
 
 
 
@@ -1041,6 +1051,15 @@ namespace AbbreviationWordAddin
         //    }
         //}
 
+        private void UnlinkHeadersAndFooters(Word.Section section)
+        {
+            foreach (Word.HeaderFooter header in section.Headers)
+                header.LinkToPrevious = false;
+
+            foreach (Word.HeaderFooter footer in section.Footers)
+                footer.LinkToPrevious = false;
+        }
+
 
         private void InsertTemplate(string templatePath)
         {
@@ -1064,41 +1083,36 @@ namespace AbbreviationWordAddin
                 originalSelection = app.Selection.Range.Duplicate;
 
                 app.ScreenUpdating = false;
+                app.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
 
-                Word.Range topRange = doc.Range(0, 0);
-                topRange.Select();
-
-                topRange.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
-
-                Word.Section firstTargetSection = doc.Sections[1];
-
+                // Open template silently
                 templateDoc = app.Documents.Open(
                     templatePath,
                     ReadOnly: true,
                     Visible: false
                 );
 
-                bool isFirstTemplateSection = true;
+                bool isFirstSection = true;
 
                 foreach (Word.Section templateSection in templateDoc.Sections)
                 {
                     Word.Section targetSection;
 
-                    if (isFirstTemplateSection)
+                    // FIRST section → reuse existing section
+                    if (isFirstSection)
                     {
-                        targetSection = firstTargetSection;
-                        isFirstTemplateSection = false;
+                        targetSection = doc.Sections[1];
+                        isFirstSection = false;
                     }
                     else
                     {
-                        Word.Range endRange = doc.Range(
-                            doc.Content.End - 1,
-                            doc.Content.End - 1
-                        );
+                        // Create new section ONLY when template has another section
+                        Word.Range endRange = doc.Range(doc.Content.End - 1);
                         endRange.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
                         targetSection = doc.Sections[doc.Sections.Count];
                     }
 
+                    // Copy page setup EXACTLY
                     targetSection.PageSetup.PageWidth = templateSection.PageSetup.PageWidth;
                     targetSection.PageSetup.PageHeight = templateSection.PageSetup.PageHeight;
                     targetSection.PageSetup.Orientation = templateSection.PageSetup.Orientation;
@@ -1106,24 +1120,29 @@ namespace AbbreviationWordAddin
                     targetSection.PageSetup.BottomMargin = templateSection.PageSetup.BottomMargin;
                     targetSection.PageSetup.LeftMargin = templateSection.PageSetup.LeftMargin;
                     targetSection.PageSetup.RightMargin = templateSection.PageSetup.RightMargin;
+                    targetSection.PageSetup.HeaderDistance = templateSection.PageSetup.HeaderDistance;
+                    targetSection.PageSetup.FooterDistance = templateSection.PageSetup.FooterDistance;
 
-                    CopyHeadersAndFooters(templateSection, targetSection);
+                    Word.Range bodyRange = templateSection.Range.Duplicate;
 
-                    Word.Range templateContent = templateSection.Range.Duplicate;
-                    templateContent.Collapse(Word.WdCollapseDirection.wdCollapseStart);
-                    templateContent.MoveEnd(Word.WdUnits.wdSection, 1);
-                    templateContent.Copy();
+                    if (bodyRange.End > bodyRange.Start)
+                    {
+                        bodyRange.End -= 1;
+                    }
+
+                    bodyRange.Copy();
 
                     Word.Range pasteRange = targetSection.Range;
                     pasteRange.Collapse(Word.WdCollapseDirection.wdCollapseStart);
                     pasteRange.Paste();
                 }
 
-                Word.Range finalTop = doc.Range(0, 0);
-                finalTop.Select();
-                app.ActiveWindow.ScrollIntoView(finalTop, true);
+                // Scroll to top
+                Word.Range top = doc.Range(0, 0);
+                top.Select();
+                app.ActiveWindow.ScrollIntoView(top, true);
 
-                WordDialogHelper.ShowInfo("Template inserted at top of document.");
+                WordDialogHelper.ShowInfo("Template inserted successfully.");
             }
             catch (Exception ex)
             {
@@ -1136,6 +1155,8 @@ namespace AbbreviationWordAddin
                 app.ScreenUpdating = true;
             }
         }
+
+
 
 
 

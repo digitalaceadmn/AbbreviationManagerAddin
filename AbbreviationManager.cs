@@ -160,12 +160,6 @@ namespace AbbreviationWordAddin
         {
             try
             {
-                System.Windows.Forms.MessageBox.Show(
-                    "Calling Load from Excel",
-                    "Abbreviation Loading status",
-                    System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Information
-                 );
                 AbbreviationManager.ClearAutoCorrectCache();
 
                 ExcelPackage.License.SetNonCommercialPersonal("Abbreviations");

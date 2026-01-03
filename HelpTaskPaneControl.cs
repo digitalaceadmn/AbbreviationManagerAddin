@@ -1,3 +1,4 @@
+using Word = Microsoft.Office.Interop.Word;
 using System;
 using System.Drawing;
 using System.IO;
@@ -18,53 +19,53 @@ namespace AbbreviationWordAddin
         {
             this.SuspendLayout();
 
-            // Main container
             this.AutoScaleDimensions = new SizeF(8F, 16F);
             this.AutoScaleMode = AutoScaleMode.Font;
             this.BackColor = Color.White;
             this.Size = new Size(400, 600);
 
-            // Header Panel
-            var headerPanel = new Panel();
-            headerPanel.BackColor = Color.FromArgb(0, 120, 215); // Office blue
-            headerPanel.Height = 60;
-            headerPanel.Dock = DockStyle.Top;
+            var headerPanel = new Panel
+            {
+                BackColor = Color.FromArgb(0, 120, 215),
+                Height = 60,
+                Dock = DockStyle.Top
+            };
 
-            var titleLabel = new Label();
-            titleLabel.Text = "🔒 Help - Abbreviation Manager";
-            titleLabel.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            titleLabel.ForeColor = Color.White;
-            titleLabel.AutoSize = false;
-            titleLabel.TextAlign = ContentAlignment.MiddleCenter;
-            titleLabel.Dock = DockStyle.Fill;
+            var titleLabel = new Label
+            {
+                Text = "📘 Help - Abbreviation Manager",
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill
+            };
+
             headerPanel.Controls.Add(titleLabel);
 
-            // Content Panel with scroll
-            var contentPanel = new Panel();
-            contentPanel.Dock = DockStyle.Fill;
-            contentPanel.AutoScroll = true;
-            contentPanel.Padding = new Padding(15);
+            var contentPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(0)
+            };
 
-            // Main content RichTextBox (read-only)
-            var helpContent = new RichTextBox();
-            helpContent.ReadOnly = true;
-            helpContent.BorderStyle = BorderStyle.None;
-            helpContent.BackColor = Color.White;
-            helpContent.Dock = DockStyle.Fill;
-            helpContent.Font = new Font("Segoe UI", 10F);
-            helpContent.SelectionIndent = 10;
-            helpContent.SelectionHangingIndent = -10;
+            var helpBrowser = new WebBrowser
+            {
+                Dock = DockStyle.Fill,
+                AllowWebBrowserDrop = false,
+                IsWebBrowserContextMenuEnabled = false,
+                ScriptErrorsSuppressed = true
+            };
 
-            contentPanel.Controls.Add(helpContent);
+            contentPanel.Controls.Add(helpBrowser);
 
-            // Add controls to main form
             this.Controls.Add(contentPanel);
             this.Controls.Add(headerPanel);
 
             this.ResumeLayout(false);
         }
 
-        private RichTextBox GetHelpRichTextBox()
+        private WebBrowser GetHelpBrowser()
         {
             foreach (Control c in this.Controls)
             {
@@ -72,14 +73,13 @@ namespace AbbreviationWordAddin
                 {
                     foreach (Control child in panel.Controls)
                     {
-                        if (child is RichTextBox rtb)
-                            return rtb;
+                        if (child is WebBrowser wb)
+                            return wb;
                     }
                 }
             }
             return null;
         }
-
 
         public static string ExtractTemplateToLocal(string embeddedName, string outputName)
         {
@@ -94,10 +94,6 @@ namespace AbbreviationWordAddin
             string fullPath = Path.Combine(outputDir, outputName);
 
             Assembly asm = Assembly.GetExecutingAssembly();
-
-            // IMPORTANT:
-            // You MUST include full namespace + folder
-            // e.g. "AbbreviationWordAddin.Help.Help.docx"
             Stream stream = asm.GetManifestResourceStream(embeddedName);
 
             if (stream == null)
@@ -119,139 +115,79 @@ namespace AbbreviationWordAddin
             return fullPath;
         }
 
-
-        private string LoadWordHelpText(string filePath)
+        private void LoadWordHelpIntoBrowser(string docxPath, WebBrowser browser)
         {
-            if (!File.Exists(filePath))
-                return "Help file not found.\n\nExpected: " + filePath;
+            Word.Application wordApp = null;
+            Word.Document doc = null;
 
             try
             {
-                var wordApp = Globals.ThisAddIn.Application;
-                var doc = wordApp.Documents.Open(filePath, ReadOnly: true, Visible: false);
+                wordApp = Globals.ThisAddIn.Application;
 
-                string text = doc.Content.Text;
+                doc = wordApp.Documents.Open(
+                    docxPath,
+                    ReadOnly: true,
+                    Visible: false
+                );
+
+                string tempHtmlPath = Path.Combine(
+                    Path.GetTempPath(),
+                    Guid.NewGuid().ToString("N") + ".html"
+                );
+
+                // DOCX → HTML (IMAGES SUPPORTED)
+                doc.SaveAs2(
+                    tempHtmlPath,
+                    Word.WdSaveFormat.wdFormatFilteredHTML
+                );
 
                 doc.Close(false);
+                doc = null;
 
-                return text;
+                browser.Navigate(tempHtmlPath);
             }
             catch (Exception ex)
             {
-                return "Error loading help file:\n" + ex.Message;
+                browser.DocumentText =
+                    "<html><body style='font-family:Segoe UI'>" +
+                    "<h3>Error loading help</h3><pre>" +
+                    ex.Message +
+                    "</pre></body></html>";
+            }
+            finally
+            {
+                if (doc != null)
+                {
+                    try { doc.Close(false); } catch { }
+                }
             }
         }
 
-
         private void LoadHelpContent()
         {
-            RichTextBox helpContent = GetHelpRichTextBox();
+            WebBrowser browser = GetHelpBrowser();
 
-            if (helpContent == null)
+            if (browser == null)
             {
-                MessageBox.Show("Error: Help RichTextBox not found.");
+                MessageBox.Show("Help browser not found.");
                 return;
             }
 
-            // Correct embedded resource name:
-            // Example: "AbbreviationWordAddin.Help.Help.docx"
             string embeddedName = "AbbreviationWordAddin.Help.Help.docx";
-
             string templatePath = ExtractTemplateToLocal(embeddedName, "Help.docx");
 
             if (templatePath == null)
             {
-                helpContent.Text = "Help file could not be extracted.";
+                browser.DocumentText =
+                    "<html><body>Help file could not be extracted.</body></html>";
                 return;
             }
 
-            string helpText = LoadWordHelpText(templatePath);
-
-            helpContent.Clear();
-            helpContent.Text = helpText ?? "Unable to load help content.";
-
-            helpContent.ReadOnly = true;
-            helpContent.TabStop = false;
-        }
-
-
-
-        private string CreateHelpContentRTF()
-        {
-            return @"{\rtf1\ansi\deff0 {\fonttbl {\f0 Segoe UI;} {\f1 Segoe UI;} {\f2 Segoe UI;}}
-{\colortbl;\red0\green120\blue215;\red0\green0\blue0;\red255\green255\blue255;\red40\green40\blue40;}
-
-\f0\fs28\cf1\b ABBREVIATION MANAGER - USER GUIDE\b0\fs20\cf2\par\par
-
-\f1\fs24\cf1\b OVERVIEW\b0\fs20\cf2\par
-This add-in helps you manage and use abbreviations in Microsoft Word documents efficiently.\par\par
-
-\f1\fs22\cf1\b KEY FEATURES:\b0\fs20\cf2\par
-\bullet\tab Forward Abbreviations: Type abbreviations to expand to full text\par
-\bullet\tab Reverse Abbreviations: Select from list to insert abbreviations\par
-\bullet\tab Dictionary View: Browse all available abbreviations\par
-\bullet\tab Bulk Operations: Replace or highlight all abbreviations at once\par\par
-
-\f1\fs22\cf1\b HOW TO USE:\b0\fs20\cf2\par\par
-
-\f2\fs20\cf4\b 1. ENABLE ABBREVIATIONS\b0\cf2\par
-\bullet\tab Click 'Enable' in the Abbreviation ribbon tab\par
-\bullet\tab The suggestion pane will appear automatically\par\par
-
-\f2\fs20\cf4\b 2. FORWARD ABBREVIATIONS (Normal Mode)\b0\cf2\par
-\bullet\tab Switch to 'Abbreviation' tab in the suggestion pane\par
-\bullet\tab Start typing in your document\par
-\bullet\tab Suggestions will appear as you type\par
-\bullet\tab Double-click any suggestion to insert it\par\par
-
-\f2\fs20\cf4\b 3. REVERSE ABBREVIATIONS (Reverse Mode)\b0\cf2\par
-\bullet\tab Switch to 'Reverse' tab in the suggestion pane\par
-\bullet\tab Browse the list of available full forms\par
-\bullet\tab Double-click any item to insert its abbreviation\par
-\bullet\tab \cf1\b NOTE: Typing does NOT generate suggestions in reverse mode\b0\cf2\par\par
-
-\f2\fs20\cf4\b 4. DICTIONARY VIEW\b0\cf2\par
-\bullet\tab Switch to 'Dictionary' tab to view all abbreviations\par
-\bullet\tab Alphabetically sorted for easy browsing\par
-\bullet\tab Shows abbreviation and full form pairs\par\par
-
-\f2\fs20\cf4\b 5. BULK OPERATIONS\b0\cf2\par
-\bullet\tab 'Replace All': Find and replace all abbreviations in document\par
-\bullet\tab 'Highlight All': Highlight all potential abbreviations\par
-\bullet\tab 'Highlight Like': Advanced pattern highlighting\par\par
-
-\f1\fs22\cf1\b RIBBON BUTTONS:\b0\fs20\cf2\par
-\bullet\tab \b Enable/Disable\b0: Toggle abbreviation functionality\par
-\bullet\tab \b Replace All\b0: Batch replace abbreviations in document\par
-\bullet\tab \b Highlight All\b0: Highlight abbreviations for review\par
-\bullet\tab \b Show Suggestions\b0: Display/hide the suggestion pane\par
-\bullet\tab \b Templates\b0: Access document templates\par
-\bullet\tab \b Help\b0: Show this help information\par\par
-
-\f1\fs22\cf1\b TIPS & BEST PRACTICES:\b0\fs20\cf2\par
-\bullet\tab Keep the suggestion pane open while working\par
-\bullet\tab Use 'Dictionary' tab to familiarize yourself with available abbreviations\par
-\bullet\tab For reverse abbreviations, always select from the list rather than typing\par
-\bullet\tab Use 'Replace All' for quick document processing\par
-\bullet\tab Use 'Highlight All' to review abbreviations before replacing\par\par
-
-\f1\fs22\cf1\b TROUBLESHOOTING:\b0\fs20\cf2\par
-\bullet\tab If suggestions don't appear, try clicking 'Enable' again\par
-\bullet\tab If the pane disappears, click 'Show Suggestions'\par
-\bullet\tab For reverse mode, ensure you're selecting from the list, not typing\par
-\bullet\tab Restart Word if abbreviations stop working\par\par
-
-\f1\fs22\cf1\b SECURITY NOTE:\b0\fs20\cf2\par
-This help content is displayed in a read-only task pane and cannot be edited.\par
-All abbreviation data is securely managed by the add-in.\par\par
-
-\cf1\b For additional support, contact your system administrator.\b0\cf2\par
-}";
+            LoadWordHelpIntoBrowser(templatePath, browser);
         }
 
         private void HelpTaskPaneControl_Load(object sender, EventArgs e)
         {
-            // Ensure content is loaded when control loads
             LoadHelpContent();
         }
     }

@@ -443,7 +443,6 @@ namespace AbbreviationWordAddin
 
             if (!taskPanes.ContainsKey(window))
             {
-                // Create pane only once per window
                 SuggestionPaneControl = new SuggestionPaneControl();
                 var pane = this.CustomTaskPanes.Add(SuggestionPaneControl, "Abbreviation Suggestions", window);
                 pane.Width = 700;
@@ -665,19 +664,79 @@ namespace AbbreviationWordAddin
         //    }
         //}
 
-        private void ReplaceInRange(
-    Word.Range sourceRange,
-    Regex regex,
-    Dictionary<string, string> map)
-        {
-            Word.Range range = sourceRange.Duplicate;
+        //    private void ReplaceInRange(
+        //Word.Range sourceRange,
+        //Regex regex,
+        //Dictionary<string, string> map)
+        //    {
+        //        foreach (Word.Paragraph para in sourceRange.Paragraphs)
+        //        {
+        //            Word.Range paraRange = para.Range;
 
-            if (range.Text.EndsWith("\a"))
+        //            string originalText;
+        //            try
+        //            {
+        //                originalText = paraRange.Text;
+        //            }
+        //            catch
+        //            {
+        //                continue; // Word returned invalid range
+        //            }
+
+        //            // 🔒 HARD NULL GUARD (VERY IMPORTANT)
+        //            if (string.IsNullOrEmpty(originalText))
+        //                continue;
+
+        //            // Remove paragraph mark
+        //            if (originalText.EndsWith("\r"))
+        //            {
+        //                paraRange.End -= 1;
+        //                originalText = originalText.Substring(0, originalText.Length - 1);
+        //            }
+
+        //            // Remove table cell marker
+        //            if (originalText.EndsWith("\a"))
+        //            {
+        //                paraRange.End -= 1;
+        //                originalText = originalText.Substring(0, originalText.Length - 1);
+        //            }
+
+        //            if (string.IsNullOrWhiteSpace(originalText))
+        //                continue;
+
+        //            string replacedText = regex.Replace(
+        //                originalText,
+        //                match =>
+        //                {
+        //                    if (map.TryGetValue(match.Value, out string repl))
+        //                        return repl;
+
+        //                    return match.Value;
+        //                });
+
+        //            // Write back only if changed
+        //            if (!string.Equals(originalText, replacedText, StringComparison.Ordinal))
+        //            {
+        //                paraRange.Text = replacedText;
+        //            }
+        //        }
+        //    }
+
+        private void ReplaceInRange(
+            Word.Range sourceRange,
+            Regex regex,
+            Dictionary<string, string> map)
+        {
+            string text;
+            try
             {
-                range.End -= 1;
+                text = sourceRange.Text;
+            }
+            catch
+            {
+                return;
             }
 
-            string text = range.Text;
             if (string.IsNullOrWhiteSpace(text))
                 return;
 
@@ -692,16 +751,22 @@ namespace AbbreviationWordAddin
                 if (!map.TryGetValue(m.Value, out string repl))
                     continue;
 
-                int start = range.Start + m.Index;
+                int start = sourceRange.Start + m.Index;
                 int end = start + m.Length;
 
-                if (end > range.End)
+                if (end > sourceRange.End)
                     continue;
 
-                Word.Range r = range.Document.Range(start, end);
+                Word.Range r = sourceRange.Document.Range(start, end);
+
+                if (r.Text.Contains("\a") || r.Text.Contains("\r"))
+                    continue;
+
                 r.Text = repl;
             }
         }
+
+
 
 
 
@@ -732,8 +797,8 @@ namespace AbbreviationWordAddin
 
             string pattern = string.Join("|",
                 map.Keys
-                    .OrderByDescending(k => k.Length)
-                    .Select(Regex.Escape)
+                   .OrderByDescending(k => k.Length)
+                   .Select(Regex.Escape)
             );
 
             Regex regex = new Regex(
@@ -748,10 +813,12 @@ namespace AbbreviationWordAddin
 
             try
             {
-                // 1️⃣ Main document text
-                ReplaceInRange(doc.Content, regex, map);
+                foreach (Word.Paragraph para in doc.Paragraphs)
+                {
+                    if (!para.Range.Information[Word.WdInformation.wdWithInTable])
+                        ReplaceInRange(para.Range, regex, map);
+                }
 
-                // 2️⃣ Tables (fully safe now)
                 foreach (Word.Table table in doc.Tables)
                 {
                     foreach (Word.Row row in table.Rows)
@@ -772,6 +839,11 @@ namespace AbbreviationWordAddin
                 app.ShowAnimation = true;
             }
         }
+
+
+
+
+
 
 
 
