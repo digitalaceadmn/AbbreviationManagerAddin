@@ -120,6 +120,8 @@ namespace AbbreviationWordAddin
 
         private async void btnReplaceAll_Click(object sender, RibbonControlEventArgs e)
         {
+            Globals.ThisAddIn.IgnoredAbbreviations.Clear();
+
             var button = (RibbonButton)sender;
             button.Enabled = false; 
             button.Label = "Processing...";  

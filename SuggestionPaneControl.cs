@@ -329,10 +329,13 @@ namespace AbbreviationWordAddin
         {
             if (listViewAbbrev.SelectedItems.Count > 0)
             {
-                // remove current item without replacing
-                listViewAbbrev.Items.Remove(listViewAbbrev.SelectedItems[0]);
+                var item = listViewAbbrev.SelectedItems[0];
 
-                // move to next automatically
+                // use ListView text as abbreviation
+                Globals.ThisAddIn.IgnoredAbbreviations.Add(item.Text);
+
+                listViewAbbrev.Items.Remove(item);
+
                 if (listViewAbbrev.Items.Count > 0)
                 {
                     listViewAbbrev.Items[0].Selected = true;
@@ -340,19 +343,24 @@ namespace AbbreviationWordAddin
                 }
                 else
                 {
-                    txtWord.Text = "";
-                    txtReplacement.Text = "";
+                    clearAll();
                 }
             }
         }
 
+
+
         private void btnIgnoreAll_Click(object sender, EventArgs e)
         {
-            // clear all matches
-            listViewAbbrev.Items.Clear();
-            txtWord.Text = "";
-            txtReplacement.Text = "";
+            foreach (ListViewItem item in listViewAbbrev.Items)
+            {
+                Globals.ThisAddIn.IgnoredAbbreviations.Add(item.Text);
+            }
+
+            clearAll();
         }
+
+
 
         private void btnCancel_Click(object sender, EventArgs e)
         {

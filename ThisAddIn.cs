@@ -59,6 +59,8 @@ namespace AbbreviationWordAddin
         public bool suggestionFROMInput = false;
 
         private HashSet<string> _globallyReplacedPhrases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> IgnoredAbbreviations = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+
 
         internal class Win32WindowWrapper : IWin32Window
         {
@@ -779,15 +781,21 @@ namespace AbbreviationWordAddin
             if (reloadAbbrDataFromDict)
                 AbbreviationManager.InitializeAutoCorrectCache(app.AutoCorrect);
 
+            var ignored = this.IgnoredAbbreviations;
+
             var map = AbbreviationManager.GetAllPhrases()
-                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Where(p =>
+                    !string.IsNullOrWhiteSpace(p) &&
+                    !ignored.Contains(p)
+                )
                 .Distinct(StringComparer.InvariantCultureIgnoreCase)
                 .ToDictionary(
                     p => p,
                     p => AbbreviationManager.GetFromAutoCorrectCache(p)
-                         ?? AbbreviationManager.GetAbbreviation(p),
+                          ?? AbbreviationManager.GetAbbreviation(p),
                     StringComparer.InvariantCultureIgnoreCase
                 );
+
 
             if (map.Count == 0)
             {
@@ -795,11 +803,14 @@ namespace AbbreviationWordAddin
                 return;
             }
 
-            string pattern = string.Join("|",
-                map.Keys
-                   .OrderByDescending(k => k.Length)
-                   .Select(Regex.Escape)
-            );
+            string pattern = @"\b(" +
+                string.Join("|",
+                    map.Keys
+                       .OrderByDescending(k => k.Length)
+                       .Select(Regex.Escape)
+                ) +
+                @")\b";
+
 
             Regex regex = new Regex(
                 pattern,
@@ -837,6 +848,8 @@ namespace AbbreviationWordAddin
                 app.ScreenUpdating = true;
                 app.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
                 app.ShowAnimation = true;
+                Globals.ThisAddIn.IgnoredAbbreviations.Clear();
+
             }
         }
 
@@ -1280,7 +1293,8 @@ namespace AbbreviationWordAddin
                 if (_globallyReplacedPhrases.Contains(phrase))
                     continue;
 
-                string pattern = Regex.Escape(phrase);
+                string pattern = $@"\b{Regex.Escape(phrase)}\b";
+
                 var matches = Regex.Matches(
                     fullText,
                     pattern,
