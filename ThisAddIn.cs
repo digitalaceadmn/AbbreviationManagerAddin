@@ -37,8 +37,8 @@ namespace AbbreviationWordAddin
         private System.Windows.Forms.Timer debounceTimer;
         private const int DebounceDelayMs = 300;
         private string lastUndoneWord = null;
-        private int lastDocumentCharCount = -1;
-        private bool isTypingDetected = false;
+        public int lastDocumentCharCount = -1;
+        public bool isTypingDetected = false;
 
 
         private Trie trie = new Trie();
@@ -60,6 +60,10 @@ namespace AbbreviationWordAddin
 
         private HashSet<string> _globallyReplacedPhrases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> IgnoredAbbreviations = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+
+        public bool isProgrammaticChange = false;
+        public int lastSelectionStart = -1;
+
 
 
         internal class Win32WindowWrapper : IWin32Window
@@ -205,6 +209,28 @@ namespace AbbreviationWordAddin
         //    if (!userClosedTaskPanes.Contains(this.Application.ActiveWindow))
         //        EnsureTaskPaneVisible(this.Application.ActiveWindow);
         //}
+
+        public void RestartTypingTimer()
+        {
+            try
+            {
+                typingTimer?.Stop();
+                typingTimer?.Dispose();
+
+                typingTimer = new System.Windows.Forms.Timer
+                {
+                    Interval = 300
+                };
+
+                typingTimer.Tick += TypingTimer_Tick;
+                typingTimer.Start();
+            }
+            catch
+            {
+                // Never crash Word
+            }
+        }
+
 
         private void Application_NewDocument(Word.Document Doc)
         {
@@ -2326,22 +2352,32 @@ namespace AbbreviationWordAddin
 
         private void TypingTimer_Tick(object sender, EventArgs e)
         {
-            if (isReplacing) return;
+            if (isReplacing || isProgrammaticChange)
+                return;
 
             try
             {
-                if (this.Application.Documents.Count == 0) return;
+                if (this.Application.Documents.Count == 0)
+                    return;
 
                 var sel = this.Application.Selection;
-                if (sel?.Range == null) return;
+                if (sel?.Range == null)
+                    return;
 
                 int currentCharCount = sel.Document.Content.Characters.Count;
+                int selStart = sel.Range.Start;
 
-                if (lastDocumentCharCount != -1 &&
-                    currentCharCount != lastDocumentCharCount)
+                bool charChanged =
+                    lastDocumentCharCount != -1 &&
+                    currentCharCount != lastDocumentCharCount;
+
+                bool cursorMoved =
+                    lastSelectionStart != -1 &&
+                    selStart != lastSelectionStart;
+
+                if (charChanged || cursorMoved)
                 {
                     isTypingDetected = true;
-
                     debounceTimer.Stop();
                     debounceTimer.Start();
                 }
@@ -2351,12 +2387,14 @@ namespace AbbreviationWordAddin
                 }
 
                 lastDocumentCharCount = currentCharCount;
+                lastSelectionStart = selStart;
             }
             catch
             {
-                // Never let timer crash Word
+                // Never crash Word
             }
         }
+
 
 
 
@@ -2366,21 +2404,27 @@ namespace AbbreviationWordAddin
         {
             debounceTimer.Stop();
 
-            // 🔒 Only proceed if actual typing occurred
-            if (!isTypingDetected)
-                return;
 
-            isTypingDetected = false;
 
             if (this.Application.Documents.Count == 0 || !isAbbreviationEnabled)
                 return;
 
+
+            var selec = this.Application.Selection;
+            if (selec?.Range == null)
+                return;
+
+
+            if (selec.Range.StoryType != Word.WdStoryType.wdMainTextStory)
+                return;
+
+
             var window = this.Application.ActiveWindow;
             if (window == null) return;
 
+
             SuggestionPaneControl currentControl = null;
 
-            // Get or create task pane control
             if (!taskPanes.ContainsKey(window))
             {
                 currentControl = EnsureTaskPaneVisible(window, "Debouncer");
@@ -2393,7 +2437,6 @@ namespace AbbreviationWordAddin
 
             try
             {
-                // If control doesn't exist, can't proceed
                 if (currentControl == null)
                     return;
 

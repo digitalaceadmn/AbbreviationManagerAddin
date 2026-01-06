@@ -1072,6 +1072,20 @@ namespace AbbreviationWordAddin
             {
                 templateDoc?.Close(false);
                 app.ScreenUpdating = true;
+
+                try
+                {
+                    Globals.ThisAddIn.lastDocumentCharCount = doc.Content.Characters.Count;
+                    Globals.ThisAddIn.lastSelectionStart = app.Selection?.Range?.Start ?? -1;
+                    Globals.ThisAddIn.isTypingDetected = false;
+                }
+                catch
+                {
+                    Globals.ThisAddIn.lastDocumentCharCount = -1;
+                }
+
+                Globals.ThisAddIn.isProgrammaticChange = false;
+                Globals.ThisAddIn.RestartTypingTimer();
             }
         }
 
