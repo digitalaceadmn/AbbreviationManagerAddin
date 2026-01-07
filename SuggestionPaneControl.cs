@@ -14,6 +14,7 @@ namespace AbbreviationWordAddin
         public event Action<string, string> OnSuggestionAccepted;
         private bool isSuggestionListFrozen = false;
         private bool suggestionFROMInput = false;
+        private LoaderForm loader;
 
         public SuggestionPaneControl()
         {
@@ -261,9 +262,7 @@ namespace AbbreviationWordAddin
 
             var match = (MatchResult)listViewAbbrev.SelectedItems[0].Tag;
 
-            string replacement = txtReplacement.Text.Trim();
-            if (string.IsNullOrEmpty(replacement))
-                replacement = match.Replacement;
+            string replacement = match.Replacement;
 
             // ✅ Replace ALL occurrences in document
             Globals.ThisAddIn.ReplaceAbbreviation(match.Phrase, replacement, true);
@@ -291,6 +290,24 @@ namespace AbbreviationWordAddin
             }
         }
 
+        public void CloseLoader()
+        {
+            if (loader != null && !loader.IsDisposed)
+            {
+                if (loader.InvokeRequired)
+                {
+                    loader.Invoke(new Action(() => loader.Close()));
+                }
+                else
+                {
+                    loader.Close();
+                }
+
+                loader = null;
+            }
+        }
+
+
 
         private async void btnReplaceAll_Click(object sender, EventArgs e)
         {
@@ -303,7 +320,7 @@ namespace AbbreviationWordAddin
                 return;
             }
 
-            using (var loader = new LoaderForm())
+            using (loader = new LoaderForm())
             {
                 loader.Show();
                 loader.Refresh();
@@ -312,8 +329,6 @@ namespace AbbreviationWordAddin
                 {
                     Globals.ThisAddIn.ReplaceAllDirectAbbreviations_Fast();
                 });
-
-                loader.Close();
             }
         }
 

@@ -64,7 +64,11 @@ namespace AbbreviationWordAddin
         public bool isProgrammaticChange = false;
         public int lastSelectionStart = -1;
 
-
+        private IWin32Window GetWordWindow()
+        {
+            IntPtr hwnd = new IntPtr(this.Application.ActiveWindow.Hwnd);
+            return new Win32WindowWrapper(hwnd);
+        }
 
         internal class Win32WindowWrapper : IWin32Window
         {
@@ -795,6 +799,34 @@ namespace AbbreviationWordAddin
         }
 
 
+        private void HandleWordInteropException(System.Runtime.InteropServices.COMException ex)
+        {
+            var owner = GetWordWindow();
+            if (ex.Message.Contains("vertically merged"))
+            {
+                MessageBox.Show(
+                    owner,
+                    "Some tables in this document contain vertically merged cells.\n\n" +
+                    "Abbreviations were replaced wherever possible, but some table content could not be processed automatically.\n\n" +
+                    "No data was lost.",
+                    "Partial Processing Completed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+            else
+            {
+                MessageBox.Show(
+                    owner,
+                    "An unexpected Word error occurred while replacing abbreviations.\n\n" +
+                    ex.Message,
+                    "Processing Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+        }
+
 
 
 
@@ -856,6 +888,7 @@ namespace AbbreviationWordAddin
                         ReplaceInRange(para.Range, regex, map);
                 }
 
+                // Tables (SAFE way – works with merged cells)
                 foreach (Word.Table table in doc.Tables)
                 {
                     foreach (Word.Row row in table.Rows)
@@ -867,15 +900,21 @@ namespace AbbreviationWordAddin
                     }
                 }
             }
+            catch (System.Runtime.InteropServices.COMException ex)
+            {
+                Globals.ThisAddIn.SuggestionPaneControl?.CloseLoader();
+
+                HandleWordInteropException(ex);
+            }
             finally
             {
+                Globals.ThisAddIn.SuggestionPaneControl?.CloseLoader();
                 try { app.UndoRecord.EndCustomRecord(); } catch { }
 
                 app.ScreenUpdating = true;
                 app.DisplayAlerts = Word.WdAlertLevel.wdAlertsAll;
                 app.ShowAnimation = true;
                 Globals.ThisAddIn.IgnoredAbbreviations.Clear();
-
             }
         }
 
@@ -1524,54 +1563,70 @@ namespace AbbreviationWordAddin
                 _globallyReplacedPhrases.Add(phrase);
         }
 
+        private List<string> GetBlockingPhrases(string phrase)
+        {
+            return AbbreviationManager.GetAllPhrases()
+                .Where(p =>
+                    !p.Equals(phrase, StringComparison.OrdinalIgnoreCase) &&
+                    p.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                .OrderByDescending(p => p.Length)
+                .ToList();
+        }
+
+        private string GetSentenceText(Word.Range range)
+        {
+            Word.Range sentenceRange = range.Duplicate;
+            sentenceRange.Expand(Word.WdUnits.wdSentence);
+            return sentenceRange.Text;
+        }
+
 
         public void ReplaceAbbreviation(string word, string replacement, bool replaceAll = false)
         {
-            var app = this.Application;
-            var doc = app.ActiveDocument;
+            
+            var doc = this.Application.ActiveDocument;
+            if (doc == null) return;
 
-            if (doc == null)
+            var blockingPhrases = GetBlockingPhrases(word);
+
+            Word.Range searchRange = doc.Content;
+            Word.Find find = searchRange.Find;
+
+            find.ClearFormatting();
+            find.Text = word;
+            find.MatchCase = false;
+            find.MatchWholeWord = true;
+            find.MatchWildcards = false;
+            find.Forward = true;
+            find.Wrap = WdFindWrap.wdFindStop;
+
+            while (find.Execute())
             {
-                if (debug)
-                {
-                    MessageBox.Show("No active document found.");
-                }
-                return;
-            }
+                // IMPORTANT: range now points to the found word
+                Word.Range foundRange = searchRange.Duplicate;
 
-            try
-            {
-                Word.Range range = doc.Content;
-                Word.Find find = range.Find;
+                string sentenceText = GetSentenceText(foundRange);
 
-                find.ClearFormatting();
-                find.Replacement.ClearFormatting();
-
-                find.Text = word;
-                find.Replacement.Text = replacement;
-
-                find.MatchCase = false;
-                find.MatchWholeWord = true;
-                find.MatchWildcards = false;
-                find.Forward = true;
-                find.Wrap = WdFindWrap.wdFindContinue;
-
-                // ✅ KEY FIX: Replace ONE or ALL correctly
-                find.Execute(
-                    Replace: replaceAll
-                        ? WdReplace.wdReplaceAll
-                        : WdReplace.wdReplaceOne
+                bool isBlocked = blockingPhrases.Any(p =>
+                    sentenceText.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0
                 );
-            }
-            catch (Exception ex)
-            {
-                if (debug)
+
+                if (!isBlocked)
                 {
-                    MessageBox.Show("Error replacing abbreviation: " + ex.Message);
-                    System.Diagnostics.Debug.WriteLine("Error replacing abbreviation: " + ex.Message);
+                    foundRange.Text = replacement;
+
+                    if (!replaceAll)
+                        break;
                 }
+
+                // Move forward
+                searchRange.Start = foundRange.End;
+                searchRange.End = doc.Content.End;
             }
         }
+
+
 
 
 
