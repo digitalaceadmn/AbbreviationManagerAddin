@@ -755,9 +755,9 @@ namespace AbbreviationWordAddin
         //    }
 
         private void ReplaceInRange(
-            Word.Range sourceRange,
-            Regex regex,
-            Dictionary<string, string> map)
+    Word.Range sourceRange,
+    Regex regex,
+    Dictionary<string, string> map)
         {
             string text;
             try
@@ -791,12 +791,24 @@ namespace AbbreviationWordAddin
 
                 Word.Range r = sourceRange.Document.Range(start, end);
 
-                if (r.Text.Contains("\a") || r.Text.Contains("\r"))
+                // 🚫 Skip paragraph marks ONLY
+                if (r.Text.Contains("\r"))
                     continue;
 
-                r.Text = repl;
+                // ✅ If inside table cell, exclude cell-end marker safely
+                if (r.Text.EndsWith("\a"))
+                {
+                    Word.Range inner = sourceRange.Document.Range(r.Start, r.End - 1);
+                    inner.Text = repl;
+                }
+                else
+                {
+                    r.Text = repl;
+                }
             }
         }
+
+
 
 
         private void HandleWordInteropException(System.Runtime.InteropServices.COMException ex)
@@ -861,13 +873,14 @@ namespace AbbreviationWordAddin
                 return;
             }
 
-            string pattern = @"\b(" +
+            string pattern =
+                @"(?<!\w)(" +
                 string.Join("|",
                     map.Keys
                        .OrderByDescending(k => k.Length)
                        .Select(Regex.Escape)
                 ) +
-                @")\b";
+                @")(?!\w)";
 
 
             Regex regex = new Regex(
@@ -888,17 +901,15 @@ namespace AbbreviationWordAddin
                         ReplaceInRange(para.Range, regex, map);
                 }
 
-                // Tables (SAFE way – works with merged cells)
+                // Inside tables (MERGED-CELL SAFE)
                 foreach (Word.Table table in doc.Tables)
                 {
-                    foreach (Word.Row row in table.Rows)
+                    foreach (Word.Paragraph para in table.Range.Paragraphs)
                     {
-                        foreach (Word.Cell cell in row.Cells)
-                        {
-                            ReplaceInRange(cell.Range, regex, map);
-                        }
+                        ReplaceInRange(para.Range, regex, map);
                     }
                 }
+
             }
             catch (System.Runtime.InteropServices.COMException ex)
             {
@@ -1358,7 +1369,8 @@ namespace AbbreviationWordAddin
                 if (_globallyReplacedPhrases.Contains(phrase))
                     continue;
 
-                string pattern = $@"\b{Regex.Escape(phrase)}\b";
+                string pattern = $@"(?<!\w){Regex.Escape(phrase)}(?!\w)";
+
 
                 var matches = Regex.Matches(
                     fullText,
@@ -1606,11 +1618,16 @@ namespace AbbreviationWordAddin
                 // IMPORTANT: range now points to the found word
                 Word.Range foundRange = searchRange.Duplicate;
 
-                string sentenceText = GetSentenceText(foundRange);
-
                 bool isBlocked = blockingPhrases.Any(p =>
-                    sentenceText.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0
-                );
+                {
+                    Word.Range testRange = foundRange.Duplicate;
+                    testRange.Start = Math.Max(doc.Content.Start, foundRange.Start - p.Length);
+                    testRange.End = Math.Min(doc.Content.End, foundRange.End + p.Length);
+
+                    return testRange.Text
+                        .IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0;
+                });
+
 
                 if (!isBlocked)
                 {
